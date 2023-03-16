@@ -238,7 +238,7 @@ Parameters::Parameters(std::string filename) {
       functionWithLoop = new map<string, list<int>*>();
       addDefaultKernels(functionWithLoop);
 	  ifstream i(filename);
-	  
+
       if (!i.good()) {
 
         cout<< "=============================================================\n";
@@ -261,7 +261,7 @@ Parameters::Parameters(std::string filename) {
         precisionAware        = param["precisionAware"];
         heterogeneity         = param["heterogeneity"];
         heuristicMapping      = param["heuristicMapping"];
- 
+
         (*functionWithLoop)[param["kernel"]] = new list<int>();
         json loops = param["targetLoopsID"];
         for (int i=0; i<loops.size(); ++i) {

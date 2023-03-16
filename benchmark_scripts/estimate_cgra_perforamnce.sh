@@ -20,7 +20,10 @@ for file in $(find $1 -name *.rewriter.output); do
     echo "Putting perfomacne in $target"
     echo -n "" > $target
 
+    echo ${#iis[@]}  # array len; but found 0
+
     for i in ${!iis[@]}; do
+        echo "${kernels[$i]},${iis[$i]}"
         echo "${kernels[$i]},${iis[$i]}" >> $target
     done
 done

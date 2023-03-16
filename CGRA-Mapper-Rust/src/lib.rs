@@ -53,7 +53,7 @@ fn dfg_to_egraph(dfg: &CppDFG) -> (EGraph<SymbolLang, ()>, Vec<Id>) {
 	let mut eclasses = vec![];
     let mut is_root = (0..nodes.len()).map(|_| true).collect::<Vec<_>>(); // could use bit vector
 	// DEBUG >>>
-	// let test = 
+	// let test =
 	// unsafe { std::slice::from_raw_parts(std::ptr::null_mut(), 0) }.iter()
 	//	.map(|&c: &u32| eclasses[c as usize]).collect::<Vec<_>>();
 	// println!("{:?}", test);
@@ -185,7 +185,7 @@ fn dfg_to_rooted_expr(dfg: &CppDFG) -> RecExpr<SymbolLang> {
 
     let mut roots = ids.iter().cloned().zip(is_root.iter().cloned())
         .filter_map(|(e, is_r)| if is_r { Some(e) } else { None }).collect::<Vec<_>>();
-    
+
 	// we remove duplicates, why is this necessary?
     roots.sort();
     roots.dedup();
@@ -291,7 +291,7 @@ pub extern "C" fn optimize_with_egraphs(dfg: CppDFG, rulesets: Rulesets, cgra_pa
 	let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
 	assert!(dfgs_ptr != std::ptr::null_mut());
 	unsafe { *dfgs_ptr = expr_to_dfg(best) };
-	
+
 	CppDFGs { dfgs: dfgs_ptr, count: 1 }
 }
 
@@ -301,6 +301,7 @@ pub extern "C" fn optimize_with_graphs(dfg: CppDFG, rulesets: Rulesets, cgra_par
 
 	let rules = load_rulesets(rulesets);
     let mut graph = dfg_to_graph(dfg);
+    println!("Number of rules: {}", rules.len());
     // TODO:
     // println!("identified {} roots", graph.roots.len());
 	// graph.to_svg("/tmp/initial.svg").unwrap();
@@ -316,7 +317,7 @@ pub extern "C" fn optimize_with_graphs(dfg: CppDFG, rulesets: Rulesets, cgra_par
 		ban_cost = BanCost::from_operations_file(cgrafilename);
 		Box::new(|g| g.cost(&ban_cost))
 	};
-	
+
     let start_rewriting = std::time::Instant::now();
 
     let mut local_minima = false;
@@ -329,7 +330,7 @@ pub extern "C" fn optimize_with_graphs(dfg: CppDFG, rulesets: Rulesets, cgra_par
             let lhs = r.searcher.get_pattern().unwrap();
             let rhs = r.applier.get_pattern_ast().unwrap();
 
-            // while let Some((id, subst)) = lhs.search_graph(&graph) {
+            // while let Some((id, subst)) = lhs.search_graph(&graph)
 			let current_cost = cost(&graph);
 			if let Some(mut improved) = lhs.search_graph_until(&graph, |id, subst| {
 				let mut candidate = graph.clone();
@@ -359,6 +360,6 @@ pub extern "C" fn optimize_with_graphs(dfg: CppDFG, rulesets: Rulesets, cgra_par
 	let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
 	assert!(dfgs_ptr != std::ptr::null_mut());
 	unsafe { *dfgs_ptr = expr_to_dfg(best) };
-	
+
 	CppDFGs { dfgs: dfgs_ptr, count: 1 }
 }

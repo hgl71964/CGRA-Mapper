@@ -57,8 +57,6 @@ else
 	exit 1
 fi
 
-touch run_output
-
 ## Now run over all other input files.
 typeset -a files
 echo "Looking for files in $original_folder/$3"
@@ -68,7 +66,7 @@ done
 echo "Before reducing, have ${#files[@]}"
 # Do this in python, because it is a bit easier to manage the
 # dict of arrays in python.
-files=( $(python $original_folder/reducer.py --rate $reduction_rate ${files[@]}) )
+files=( $(python3 $original_folder/reducer.py --rate $reduction_rate ${files[@]}) )
 echo "Running over files ${#files[@]}"
 
 extra_flags=""
@@ -107,6 +105,15 @@ if [[ ${#print_used_rules} -gt 0 ]]; then
 	extra_flags="$extra_flags --print-used-rules"
 fi
 
+output_name=$original_folder/$temp_folder/run_output
+touch $original_folder/$temp_folder/run_output
+echo $output_name
+if [[ ! -e $output_name ]]; then
+    touch fail
+    exit 1
+fi
+
+
 parallel "(
 	echo 'Starting {}'
 	cp {} kernel_{/.}.cpp
@@ -126,13 +133,35 @@ parallel "(
 	fi
 	echo 'Done Building {/}')" ::: ${files[@]} &> run_output
 
+# non-parallel version
+# for file in ${files[@]}; do
+# 	echo 'Starting ' $file
+# 	cp $file kernel_.cpp
+# 	$original_folder/compile.sh $extra_compile_flags kernel_.cpp
+# 	# A small number seem to cause loops somewhere --- just want to get non-buggy results
+# 	time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_.bc --params-file $PWD/param.json $extra_flags &>> $output_name
+# 	if [[ \$? != 0 ]] && [[ $egraphs == \"true\" ]]; then
+# 		# We timed out, so we should fall back to the mapper without
+# 		# rewriting.  This would ideally happen interally within
+# 		# flex, but it means the same thing happening here :)
+# 		echo 'Rewriter timed out, running without rewriter.'
+# 		# Put a tmeout on this also to avoid infinit e hanging.
+# 		timeout 50 $original_folder/run.sh $original_folder/$lmapper kernel_.bc --use-rewriter --params-file $PWD/param.json &>> $output_name
+# 		if [[ \$? == 124 ]]; then
+# 			echo 'Subrewriter timed out'
+# 		fi
+# 	fi
+#         echo 'Done Building ' $file
+# done
+
 # Get the successes/fails for each file and print them for further parsing.
 # These should be in order, so you get a succ/fail followed by a done that corresponds to it.
-grep --text run_output -e "Mapping:success" -e "Mapping:fail" -e "Done File: "
+grep --text $output_name -e "Mapping:success" -e "Mapping:fail" -e "Done File: "
 
-success=$(grep -ce "Mapping:success" run_output || echo "")
-fails=$(grep -ce "Mapping:fail" run_output || echo "")
+success=$(grep -ce "Mapping:success" $output_name || echo "")
+fails=$(grep -ce "Mapping:fail" $output_name || echo "")
 
-mv run_output run_output.old
+ls $original_folder/$temp_folder
+mv $output_name $original_folder/$temp_folder/run_output.old
 
 echo "Have $success successes, $fails fails"
