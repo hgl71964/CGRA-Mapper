@@ -29,6 +29,7 @@ class Options {
 		bool UseRewriter;
 		bool UseEGraphs;
 		bool UseGreedy;
+		bool UseMCTS;
 
 		bool DebugOperationMap;
 		bool DebugRustConversion;
@@ -39,7 +40,7 @@ class Options {
 		bool PrintUsedRules;
 
 		int MaxII;
-		
+
 		std::string Params;
 		list<std::string> rulesets;
 		std::string EGraphMode;

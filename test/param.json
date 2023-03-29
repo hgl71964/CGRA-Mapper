@@ -25,52 +25,52 @@
   "operations":
 {
 "0": {
-"0": ["store"],
-"1": [],
-"2": [],
-"3": ["add"],
-"4": ["load", "load", "load", "load", "load", "load", "load", "load", "load"],
-"5": []
+"0": ["store", "store", "store", "store", "store", "const_63", "store", "const_63"],
+"1": ["fptosi", "const_32", "const_0", "const_1", "and", "const_32", "const_0", "const_1"],
+"2": ["const_32", "Constant", "const_1", "fadd", "add", "and", "getelementptr", "const_32", "Constant", "const_1"],
+"3": ["getelementptr", "and", "const_3", "Constant", "fadd", "getelementptr", "getelementptr", "getelementptr", "and", "const_3", "Constant"],
+"4": ["load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "const_0", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "load", "const_0"],
+"5": ["getelementptr", "fadd", "add", "Constant", "const_1", "getelementptr", "getelementptr", "getelementptr", "getelementptr", "Constant", "const_1"]
 },
 "1": {
-"0": [],
-"1": [],
-"2": ["getelementptr", "getelementptr"],
-"3": ["sext", "const_1", "sext", "const_1"],
-"4": ["add", "zext", "add"],
-"5": []
+"0": ["store", "store", "store", "Constant", "Constant", "store", "store", "Constant", "Constant"],
+"1": ["Constant", "const_0", "const_0", "getelementptr", "sub", "Constant", "const_0", "const_0"],
+"2": ["getelementptr", "const_0", "Constant", "sub", "getelementptr", "const_0", "Constant"],
+"3": ["getelementptr", "getelementptr", "br", "const_32", "Constant", "const_0", "getelementptr", "getelementptr", "getelementptr", "getelementptr", "getelementptr", "getelementptr", "br", "const_32", "Constant", "const_0"],
+"4": ["and", "add", "icmp", "add", "const_0", "const_0", "fptosi", "getelementptr", "and", "icmp", "add", "const_0", "const_0"],
+"5": ["getelementptr", "fadd", "const_0", "const_0", "const_1", "add", "add", "getelementptr", "getelementptr", "const_0", "const_0", "const_1"]
 },
 "2": {
-"0": [],
-"1": [],
-"2": [],
-"3": ["br", "br", "br"],
-"4": ["icmp"],
-"5": []
+"0": ["store", "store", "store", "const_0", "store", "store", "const_0"],
+"1": ["const_0", "const_0", "const_0", "const_0", "const_0", "const_0"],
+"2": ["const_0", "const_0", "const_0", "getelementptr", "const_0", "const_0", "const_0"],
+"3": ["getelementptr", "br", "const_3", "getelementptr", "getelementptr", "br", "const_3"],
+"4": ["const_0", "Constant", "Constant", "fadd", "fptosi", "getelementptr", "getelementptr", "getelementptr", "const_0", "Constant", "Constant"],
+"5": ["const_63", "const_0", "getelementptr", "add", "getelementptr", "getelementptr", "const_63", "const_0"]
 },
 "3": {
-"0": [],
-"1": ["const_1", "const_1"],
-"2": [],
-"3": ["br"],
-"4": [],
-"5": []
+"0": ["store", "store", "store", "const_0", "const_0"],
+"1": ["Constant", "const_0", "const_fp", "Constant", "const_0", "const_fp"],
+"2": ["const_32", "Constant", "Constant", "const_32", "Constant", "Constant"],
+"3": ["br", "const_2", "const_1", "getelementptr", "br", "const_2", "const_1"],
+"4": ["fptosi", "const_0", "Constant", "const_0", "getelementptr", "getelementptr", "const_0", "Constant", "const_0"],
+"5": ["Constant", "const_0", "getelementptr", "getelementptr", "Constant", "const_0"]
 },
 "4": {
-"0": [],
-"1": [],
-"2": [],
-"3": [],
-"4": [],
-"5": []
+"0": ["store", "const_1", "const_1"],
+"1": ["const_0", "const_0", "const_0", "const_0", "const_0", "const_0"],
+"2": ["const_0", "Constant", "const_0", "Constant"],
+"3": ["const_1", "const_63", "Constant", "getelementptr", "const_1", "const_63", "Constant"],
+"4": ["fadd", "fadd", "const_0", "Constant", "const_0", "Constant"],
+"5": ["const_0", "const_0", "const_0", "const_0"]
 },
 "5": {
-"0": [],
-"1": [],
-"2": [],
-"3": [],
-"4": [],
-"5": []
+"0": ["const_63", "const_63"],
+"1": ["const_0", "const_0", "const_0", "const_0"],
+"2": ["const_2", "Constant", "const_2", "Constant"],
+"3": ["const_0", "const_0", "const_0", "const_0"],
+"4": ["Constant", "const_0", "Constant", "const_0"],
+"5": ["const_0", "const_0", "const_0", "const_0"]
 }
 }
 }

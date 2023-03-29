@@ -255,6 +255,34 @@ list<DFG*> *rewrite_with_egraphs(Options *opts, CGRA *cgra, DFG *dfg) {
 	return dfg_results;
 }
 
+list<DFG*> *rewrite_with_mcts(Options *opts, CGRA *cgra, DFG *dfg) {
+	debugRustConversion = opts->DebugRustConversion;
+	// Create the Rust DFGs:
+	RustDFG rdfg = toRustDFG(dfg, opts);
+	// Call the rewriter
+	// Results are null-terminated.
+	if (opts->DebugRustConversion) {
+		errs() << "Using rulesets " << opts->getRulesetNames() << "\n";
+	}
+	RustDFGList rust_results = optimize_with_mcts(rdfg, opts->getRulesets(), opts->Params.c_str(), opts->PrintUsedRules, opts->EGraphMode.c_str());
+	// Go through and look at the outputs
+
+	if (opts->DebugRustConversion) {
+		errs() << "Sent over graph: " << dfg->asString() << "\n";
+	}
+	list<DFG*> *dfg_results = new list<DFG*>();
+	for (int i = 0; i < rust_results.num_dfgs; i ++) {
+		// convert each result to a dfg.
+		dfg_results->push_back(toDFG(rust_results.dfgs[i]));
+	}
+	if (opts->DebugRustConversion) {
+		errs() << "Returning " << rust_results.num_dfgs << " graphs from the Rust wrapper\n";
+		errs() << "First result is " << dfg_results->front()->asString();
+		dfg_results->front()->showOpcodeDistribution();
+	}
+	return dfg_results;
+}
+
 // Only works for loop-free graphs.
 list <DFGNode *> topo_sort(list <DFGNode *> in_nodes) {
 	list<DFGNode*> out_nodes;

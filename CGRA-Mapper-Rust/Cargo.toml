@@ -14,3 +14,7 @@ crate-type = ["dylib"]
 egg = { git = "https://github.com/Bastacyclop/egg/", rev = "e574ff272ebfddedb180dcdb55f987fad3e97dc6", features = ["lp"] }
 libc = "0.2"
 tinyjson = "2"
+
+# gh512
+# rmcts = { git = "https://github.com/hgl71964/rmcts.git", rev = "88ed178"}
+rand = { version = "0.8.5"}

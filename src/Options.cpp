@@ -35,6 +35,7 @@ cl::opt<std::string> DumpFrequencies("frequencies", cl::desc("Dump the operation
 cl::opt<bool> UseRewriter("use-rewriter", cl::desc("Use the simple rewriter"));
 cl::opt<bool> UseEGraphs("use-egraphs", cl::desc("Use the egraphs-based rewriter"));
 cl::opt<bool> UseGreedy("use-greedy", cl::desc("Use greedy rewriter"));
+cl::opt<bool> UseMCTS("use-mcts", cl::desc("Use mcts rewriter"));
 
 // Debug flags
 cl::opt<bool> PrintMappingFailures("print-mapping-failures", cl::desc("Print the operations where mapping fails"));
@@ -72,6 +73,7 @@ TCLAP::CmdLine cmd("Tool to schedule a DFG Json file onto a CGRA");
   TCLAP::SwitchArg use_egraphs("e", "use-egraphs", "Use the egraph rewriter", cmd, false);
   TCLAP::SwitchArg use_rewriter("r", "use-rewriter", "Use the standard rewriter", cmd, false);
   TCLAP::SwitchArg use_greedy("g", "use-greedy", "Use the greedy rewriter", cmd, false);
+  TCLAP::SwitchArg use_mcts("p", "use-mcts", "Use the mcts rewriter", cmd, false);
 
   TCLAP::SwitchArg debug_mapping_loop("", "debug-mapping-loop", "Debug the mapping loop", cmd, false);
   TCLAP::SwitchArg print_mapping_failures("", "print-mapping-failures", "Debugg mapping failures", cmd, false);
@@ -97,6 +99,7 @@ TCLAP::CmdLine cmd("Tool to schedule a DFG Json file onto a CGRA");
   opt->UseEGraphs = use_egraphs;
   opt->UseRewriter = use_rewriter;
   opt->UseGreedy = use_greedy;
+  opt->UseMCTS = use_mcts;
 
   // TODO --- Support this.
   opt->DebugMappingLoop = debug_mapping_loop;
@@ -172,6 +175,7 @@ Options *setupOptions() {
 	opt->UseRewriter = UseRewriter;
 	opt->UseEGraphs = UseEGraphs;
   opt->UseGreedy = UseGreedy;
+  opt->UseMCTS = UseMCTS;
 
 	opt->DebugOperationMap = LLVMDebugOperationMap;
 	opt->DebugRustConversion = DebugRustConversion;

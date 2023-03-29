@@ -122,6 +122,31 @@ void runMapping(CGRA *cgra, DFG *dfg, Parameters *params, Options *options) {
             // errs() << "II: " << mapResult->II() << "\n";
         }
     }
+    else if (options->UseMCTS)
+      // gh512
+    {
+        cout << "Using FlexC MCTS Mode\n";
+        // TODO implement fallback??
+        // call the copy constructor
+        // DFG copied_dfg(*dfg); // need to copy before this changes the DFG.
+        // generated_dfgs = rewrite_with_graphs(options, cgra, dfg);
+        // mapResult = doMap(options, params, cgra, mapper, generated_dfgs, II);
+
+        // if (mapResult->failed()) {
+        //     cout << "Falling back to EGraphs\n";
+        //     // try again with egraphs.
+        //     generated_dfgs = rewrite_with_egraphs(options, cgra, &copied_dfg);
+        //     mapResult = doMap(options, params, cgra, mapper, generated_dfgs, II);
+        // } else {
+        //     errs() << "Initial Greedy Pass Succeeded\n";
+        //     // errs() << "==================================\n";
+        //     errs() << "[Mapping:success]\n";
+        //     greedy_success = true;
+        //     // errs() << "II: " << mapResult->II() << "\n";
+        // }
+        generated_dfgs = rewrite_with_mcts(options, cgra, dfg);
+        mapResult = doMap(options, params, cgra, mapper, generated_dfgs, II);
+    }
     else
     {
         // if we aren't using the rewriter, just create
