@@ -407,6 +407,7 @@ pub extern "C" fn optimize_with_mcts(
     };
     let egraph = run_mcts(egraph, roots[0], rules, cost_fn.clone(), Some(args));
     // TODO Use ILP to extract the optimal results?
+    // let (best_cost, best) = LpExtractor::new(&egraph, cost_fn).solve_multiple(&roots[..]);
     let (best_cost, best) = Extractor::new(&egraph, cost_fn).find_best(roots[0]);
 
     // to cpp

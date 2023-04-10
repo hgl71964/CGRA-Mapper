@@ -18,6 +18,7 @@ pub struct Node {
     children_visit_count: Vec<u32>,
     children_complete_visit_count: Vec<u32>,
     children_saturated: Vec<bool>,
+    children_saturated_cnt: usize,
     q_value: Vec<f32>,
 
     // self
@@ -47,6 +48,7 @@ impl Node {
             children_visit_count: vec![0; action_n],
             children_complete_visit_count: vec![0; action_n],
             children_saturated: vec![false; action_n],
+            children_saturated_cnt: 0,
             q_value: vec![0.0; action_n],
             visit_count: 0,
             traverse_history: HashMap::new(),
@@ -68,6 +70,7 @@ impl Node {
             children_visit_count: vec![0; 1],
             children_complete_visit_count: vec![0; 1],
             children_saturated: vec![false; 1],
+            children_saturated_cnt: 0,
             q_value: vec![0.0; 1],
             visit_count: 0,
             traverse_history: HashMap::new(),
@@ -81,7 +84,7 @@ impl Node {
     }
 
     pub fn no_child_available(&self) -> bool {
-        self.updated_node_count == 0
+        (self.updated_node_count == 0) || (self.updated_node_count == self.children_saturated_cnt)
     }
 
     // pub fn all_child_updated(&self) -> bool {
@@ -97,19 +100,27 @@ impl Node {
         }
     }
 
-    pub fn select_uct_action(&self) -> usize {
+    pub fn select_uct_action(&self, max: bool) -> usize {
         let mut best_score = std::f32::MIN;
-        let mut best_action = 0;
+        let mut best_action = std::usize::MAX;
         for action in 0..(self.action_n as usize) {
             if self.children[action].is_none() {
+                continue;
+            }
+            if self.children_saturated[action] {
                 continue;
             }
 
             let exploit_score =
                 self.q_value[action] / (self.children_complete_visit_count[action] as f32);
-            let explore_score = f32::sqrt(
-                2.0 * f32::ln(self.visit_count as f32) / (self.children_visit_count[action] as f32),
-            );
+            let explore_score = if max {
+                0.0
+            } else {
+                f32::sqrt(
+                    2.0 * f32::ln(self.visit_count as f32)
+                        / (self.children_visit_count[action] as f32),
+                )
+            };
             // TODO consider std?
             let score = exploit_score + 2.0 * explore_score;
 
@@ -118,28 +129,12 @@ impl Node {
                 best_action = action;
             }
         }
-        best_action
-    }
-
-    pub fn select_uct_max_action(&self) -> usize {
-        let mut best_score = std::f32::MIN;
-        let mut best_action = 0;
-        for action in 0..(self.action_n as usize) {
-            if self.children_saturated[action] {
-                continue;
-            }
-            if self.children[action].is_none() {
-                continue;
-            }
-
-            let exploit_score =
-                self.q_value[action] / (self.children_complete_visit_count[action] as f32);
-            let score = exploit_score;
-
-            if score > best_score {
-                best_score = score;
-                best_action = action;
-            }
+        if best_action == std::usize::MAX {
+            panic!("uct select");
+            // panic!(
+            //     "{} - {} - {} - {}",
+            //     self.is_head, self.updated_node_count, sat_count, child_missing_count
+            // );
         }
         best_action
     }
@@ -157,8 +152,8 @@ impl Node {
         self_node: Rc<RefCell<Node>>,
     ) {
         if child_saturated {
-            assert!(self.is_head);
             self.children_saturated[expand_action] = true;
+            self.children_saturated_cnt += 1;
         }
 
         match &self.children[expand_action] {

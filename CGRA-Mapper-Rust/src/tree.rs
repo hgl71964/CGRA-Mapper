@@ -250,14 +250,16 @@ where
         self.global_saving_idx += 1;
 
         // run main mcts
+        let mut depth = 0;
         for sim_idx in 0..self.budget {
-            self.simulate_single_step(sim_idx);
+            let d = self.simulate_single_step(sim_idx);
+            depth = std::cmp::max(depth, d);
         }
 
         // clean up
         println!(
-            "[WU-UCT] complete count {}/{} ",
-            self.simulation_count, self.budget
+            "[WU-UCT] complete count {}/{} - max_depth {}",
+            self.simulation_count, self.budget, depth
         );
         thread::sleep(Duration::from_secs(1));
 
@@ -265,13 +267,12 @@ where
         // thread, as a way to handle stragger
 
         // final action
-        self.root_node.borrow().select_uct_max_action()
+        self.root_node.borrow().select_uct_action(true)
     }
 
-    fn simulate_single_step(&mut self, sim_idx: u32) {
+    fn simulate_single_step(&mut self, sim_idx: u32) -> u32 {
         // Selection
         let mut curr_node: Rc<RefCell<Node>> = Rc::clone(&self.root_node);
-        #[allow(unused_variables)]
         let mut curr_depth = 1;
         let mut rng = rand::thread_rng();
         let need_expansion;
@@ -313,7 +314,7 @@ where
                 break;
             }
 
-            let action = curr_node.borrow().select_uct_action();
+            let action = curr_node.borrow().select_uct_action(false);
             let reward = curr_node.borrow().rewards[action].clone();
             curr_node
                 .borrow_mut()
@@ -450,6 +451,7 @@ where
                 panic!("DoneSimulation destructure fails");
             }
         }
+        curr_depth
     }
 
     fn incomplete_update(&mut self, mut curr_node: Rc<RefCell<Node>>, idx: u32) {
