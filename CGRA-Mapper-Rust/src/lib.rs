@@ -362,11 +362,6 @@ pub extern "C" fn optimize_with_egraphs(
     // runner.egraph.dot().to_svg("/tmp/egraph.svg").unwrap();
 
     for r in &mut roots[..] {
-        // *r = runner.egraph.find(*r);
-        // TODO check this???
-        let find = runner.egraph.find(*r);
-        assert_eq!(find, *r);
-        // TODO check this
         *r = runner.egraph.find(*r);
     }
 
@@ -427,10 +422,15 @@ pub extern "C" fn optimize_with_mcts(
     assert!(!print_used_rules);
     let rules = load_rulesets(rulesets);
 
-    let (egraph, mut roots) = dfg_to_egraph(&dfg);
-    for r in &mut roots[..] {
-        *r = egraph.find(*r); // TODO remove this? what does it do?
-    }
+    // let (egraph, mut roots) = dfg_to_egraph(&dfg);
+    let (egraph, mut roots) = dfg_to_egraph_single_root(&dfg);
+
+    // NOTE: root id does not need to be canonicalized
+    // https://github.com/egraphs-good/egg/blob/967a3db0c059fc17bbb2da8cc4d4c59eb5f093e0/src/egraph.rs#L556
+    // for r in &mut roots[..] {
+    //     *r = egraph.find(*r);
+    // }
+
     println!("Number of rules: {}", rules.len());
     println!("identified {} roots", roots.len());
 
@@ -445,7 +445,7 @@ pub extern "C" fn optimize_with_mcts(
     let args = MCTSArgs {
         budget: 512,
         max_sim_step: 5,
-        gamma: 0.99,
+        gamma: 0.90,
         expansion_worker_num: 1,
         simulation_worker_num: n_threads - 1,
         lp_extract: false,
@@ -461,8 +461,8 @@ pub extern "C" fn optimize_with_mcts(
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
     assert!(dfgs_ptr != std::ptr::null_mut());
 
-    // TODO; when convert to dfg, account for the added root
-    unsafe { *dfgs_ptr = expr_to_dfg(best) };
+    // unsafe { *dfgs_ptr = expr_to_dfg(best) };
+    unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
 
     CppDFGs {
         dfgs: dfgs_ptr,
@@ -539,8 +539,8 @@ pub extern "C" fn optimize_with_graphs(
 
     let rewriting_time = start_rewriting.elapsed();
     // graph.to_svg("/tmp/final.svg").unwrap();
-    println!("applied {} rules in {:?}:", applied.len(), rewriting_time);
-    println!("  {:?}", applied);
+    println!("[GREEDY]applied {} rules in {:?}:", applied.len(), rewriting_time);
+    println!("[GREEDY]  {:?}", applied);
 
     let best = graph.as_dfg();
 
