@@ -100,6 +100,14 @@ fn dfg_to_egraph(dfg: &CppDFG) -> (EGraph<SymbolLang, ()>, Vec<Id>) {
     (egraph, roots)
 }
 
+fn dfg_to_egraph_single_root(dfg: &CppDFG) -> (EGraph<SymbolLang, ()>, Vec<Id>) {
+    let (mut egraph, roots) = dfg_to_egraph(dfg);
+    // ES formulation becomes easier if the graph is single-rooted,
+    // thus add a Noop dummy sink node
+    let sink = egraph.add(SymbolLang::new("__root", roots));
+    (egraph, vec![sink])
+}
+
 fn dfg_to_graph(dfg: CppDFG) -> Graph<SymbolLang> {
     let nodes = dfg_nodes(&dfg);
     let mut graph: Graph<SymbolLang> = Default::default();
@@ -196,6 +204,45 @@ fn expr_to_dfg(expr: RecExpr<SymbolLang>) -> CppDFG {
         }
         n.num_children = en.children.len().try_into().unwrap();
         n.child_ids = child_ids;
+    }
+
+    CppDFG {
+        nodes: nodes_ptr,
+        count: enodes.len().try_into().unwrap(),
+    }
+}
+
+fn expr_to_dfg_single_root(expr: RecExpr<SymbolLang>) -> CppDFG {
+    let enodes = expr.as_ref();
+    let num_enodes = enodes.len() - 1; // exclude the added root
+    let nodes_ptr = unsafe { libc::malloc(num_enodes * size_of::<CppNode>()) } as *mut CppNode;
+    let nodes = unsafe { std::slice::from_raw_parts_mut(nodes_ptr, num_enodes) };
+    let mut find = false;
+
+    for (en, n) in enodes.iter().zip(nodes.iter_mut()) {
+        // exclude the added root
+        if en.op.as_str() == "__root" {
+            if find {
+                panic!("2 roots?");
+            }
+            find = true;
+            continue;
+        }
+        n.op = std::ffi::CString::new(en.op.as_str()).unwrap().into_raw();
+        let child_ids = unsafe { libc::malloc(en.children.len() * size_of::<u32>()) } as *mut u32;
+        for (child_id, &c) in
+            unsafe { std::slice::from_raw_parts_mut(child_ids, en.children.len()) }
+                .iter_mut()
+                .zip(en.children.iter())
+        {
+            *child_id = usize::from(c).try_into().unwrap();
+        }
+        n.num_children = en.children.len().try_into().unwrap();
+        n.child_ids = child_ids;
+    }
+
+    if !find {
+        panic!("cannot find added root, forget to add root?");
     }
 
     CppDFG {
@@ -413,6 +460,8 @@ pub extern "C" fn optimize_with_mcts(
     // to cpp
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
     assert!(dfgs_ptr != std::ptr::null_mut());
+
+    // TODO; when convert to dfg, account for the added root
     unsafe { *dfgs_ptr = expr_to_dfg(best) };
 
     CppDFGs {
