@@ -21,3 +21,4 @@ run_all_benchmarks_outputs/
 small_loop/
 test/tmp_dir
 test/cgra_performances/
+test/loop*

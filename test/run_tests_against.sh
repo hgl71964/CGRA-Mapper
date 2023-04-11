@@ -18,6 +18,8 @@ if [[ $# -ne 4 ]]; then
 	exit 1
 fi
 
+t0=`date +%s`
+
 temp_folder=$4
 rm -rf $temp_folder
 mkdir -p $temp_folder
@@ -105,63 +107,77 @@ if [[ ${#print_used_rules} -gt 0 ]]; then
 	extra_flags="$extra_flags --print-used-rules"
 fi
 
-output_name=$original_folder/$temp_folder/run_output
-touch $original_folder/$temp_folder/run_output
-echo $output_name
-if [[ ! -e $output_name ]]; then
-    touch fail
-    exit 1
-fi
+# output_name=$original_folder/$temp_folder/run_output
+# touch $original_folder/$temp_folder/run_output
+# echo $output_name
+# if [[ ! -e $output_name ]]; then
+#     touch fail
+#     exit 1
+# fi
+
+touch run_output
+sleep 1
 
 
-parallel "(
-	echo 'Starting {}'
-	cp {} kernel_{/.}.cpp
-	$original_folder/compile.sh $extra_compile_flags kernel_{/.}.cpp
-	# A small number seem to cause loops somewhere --- just want to get non-buggy results
-	time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_{/.}.bc --params-file $PWD/param.json $extra_flags
-	if [[ \$? != 0 ]] && [[ $egraphs == \"true\" ]]; then
-		# We timed out, so we should fall back to the mapper without
-		# rewriting.  This would ideally happen interally within
-		# flex, but it means the same thing happening here :)
-		echo 'Rewriter timed out, running without rewriter.'
-		# Put a tmeout on this also to avoid infinit e hanging.
-		timeout 90 $original_folder/run.sh $original_folder/$lmapper kernel_{/.}.bc --use-rewriter --params-file $PWD/param.json
-		if [[ \$? == 124 ]]; then
-			echo 'Subrewriter timed out'
-		fi
-	fi
-	echo 'Done Building {/}')" ::: ${files[@]} &> run_output
-
-# non-parallel version
-# for file in ${files[@]}; do
-# 	echo 'Starting ' $file
-# 	cp $file kernel_.cpp
-# 	$original_folder/compile.sh $extra_compile_flags kernel_.cpp
+# parallel version
+# parallel "(
+# 	echo 'Starting {}'
+# 	cp {} kernel_{/.}.cpp
+# 	$original_folder/compile.sh $extra_compile_flags kernel_{/.}.cpp
 # 	# A small number seem to cause loops somewhere --- just want to get non-buggy results
-# 	time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_.bc --params-file $PWD/param.json $extra_flags &>> $output_name
+# 	time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_{/.}.bc --params-file $PWD/param.json $extra_flags
 # 	if [[ \$? != 0 ]] && [[ $egraphs == \"true\" ]]; then
 # 		# We timed out, so we should fall back to the mapper without
 # 		# rewriting.  This would ideally happen interally within
 # 		# flex, but it means the same thing happening here :)
 # 		echo 'Rewriter timed out, running without rewriter.'
 # 		# Put a tmeout on this also to avoid infinit e hanging.
-# 		timeout 50 $original_folder/run.sh $original_folder/$lmapper kernel_.bc --use-rewriter --params-file $PWD/param.json &>> $output_name
+# 		timeout 90 $original_folder/run.sh $original_folder/$lmapper kernel_{/.}.bc --use-rewriter --params-file $PWD/param.json
 # 		if [[ \$? == 124 ]]; then
 # 			echo 'Subrewriter timed out'
 # 		fi
 # 	fi
-#         echo 'Done Building ' $file
-# done
+# 	echo 'Done Building {/}')" ::: ${files[@]} &> run_output
+
+# non-parallel version (chatGPT)
+declare -i cnt
+cnt=0
+for file in "${files[@]}"
+do
+    echo "Starting $file"
+    cp $file kernel_${cnt}.cpp
+    $original_folder/compile.sh $extra_compile_flags kernel_${cnt}.cpp
+    # A small number seem to cause loops somewhere --- just want to get non-buggy results
+    time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${cnt}.bc --params-file $PWD/param.json $extra_flags
+    if [[ $? != 0 ]] && [[ $egraphs == "true" ]]; then
+        # We timed out, so we should fall back to the mapper without
+        # rewriting.  This would ideally happen interally within
+        # flex, but it means the same thing happening here :)
+        echo "Rewriter timed out, running without rewriter."
+        # Put a tmeout on this also to avoid infinit e hanging.
+        timeout 90 $original_folder/run.sh $original_folder/$lmapper kernel_${cnt}.bc --use-rewriter --params-file $PWD/param.json
+        if [[ $? == 124 ]]; then
+            echo "Subrewriter timed out"
+        fi
+    fi
+    echo "Done Bilding ${file}"
+    cnt=$((cnt+1))
+done > run_output
 
 # Get the successes/fails for each file and print them for further parsing.
 # These should be in order, so you get a succ/fail followed by a done that corresponds to it.
-grep --text $output_name -e "Mapping:success" -e "Mapping:fail" -e "Done File: "
+# grep --text $output_name -e "Mapping:success" -e "Mapping:fail" -e "Done File: "
+grep --text run_output -e "Mapping:success" -e "Mapping:fail" -e "Done File: "
 
 success=$(grep -ce "Mapping:success" $output_name || echo "")
 fails=$(grep -ce "Mapping:fail" $output_name || echo "")
 
-ls $original_folder/$temp_folder
-mv $output_name $original_folder/$temp_folder/run_output.old
+# mv run_output run_output.old
 
 echo "Have $success successes, $fails fails"
+
+t1=`date +%s`
+runtime=$((t1-t0))
+echo "this script runs $runtime seconds"
+
+popd  # pop from previous pushd??
