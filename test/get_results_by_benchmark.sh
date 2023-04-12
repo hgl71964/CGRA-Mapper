@@ -21,4 +21,4 @@ else
 fi
 size=$(python $(dirname $(which $0))/get_number_of_operations.py "$(grep -m1 --text $sizefile -e 'Available ops are')")
 echo "Has accelerator size $size"
-python $(dirname $(which $0))/get_results_by_benchmark.py $1 <(grep --text $2 -e 'Mapping:' -e 'Done File') $3 --accelerator-size $size
+python3 $(dirname $(which $0))/get_results_by_benchmark.py $1 <(grep --text $2 -e 'Mapping:' -e 'Done File') $3 --accelerator-size $size
