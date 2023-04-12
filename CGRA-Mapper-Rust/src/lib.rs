@@ -380,7 +380,7 @@ pub extern "C" fn optimize_with_egraphs(
         println!("Running egraphs with ban cost");
         let cost = BanCost::from_operations_file(cgrafilename);
         let mut extractor = LpExtractor::new(&runner.egraph, cost);
-        extractor.timeout(100.0);
+        extractor.timeout(30.0);
         let (exp, ids) = extractor.solve_multiple(&roots[..]);
         (exp, ids)
     };

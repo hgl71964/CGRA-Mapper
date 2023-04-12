@@ -147,8 +147,8 @@ if [[ ${#gather_only} -eq 0 ]]; then
 		fi
 	done
 
-	python plot_successes.py run_all_benchmarks_outputs/graph.png run_all_benchmarks_outputs/no_rules_data run_all_benchmarks_outputs/llvm_data run_all_benchmarks_outputs/greedy_data run_all_benchmarks_outputs/rewriter_data
-	python plot_successes_by_benchmark.py run_all_benchmarks_outputs/graph_by_benchmark.png run_all_benchmarks_outputs/no_rules_data_by_benchmark run_all_benchmarks_outputs/llvm_data_by_benchmark  run_all_benchmarks_outputs/greedy_data_by_benchmark run_all_benchmarks_outputs/rewriter_data_by_benchmark
+	python3 plot_successes.py run_all_benchmarks_outputs/graph.png run_all_benchmarks_outputs/no_rules_data run_all_benchmarks_outputs/llvm_data run_all_benchmarks_outputs/greedy_data run_all_benchmarks_outputs/rewriter_data
+	python3 plot_successes_by_benchmark.py run_all_benchmarks_outputs/graph_by_benchmark.png run_all_benchmarks_outputs/no_rules_data_by_benchmark run_all_benchmarks_outputs/llvm_data_by_benchmark  run_all_benchmarks_outputs/greedy_data_by_benchmark run_all_benchmarks_outputs/rewriter_data_by_benchmark
 
 	if [[ ${#run_individual_rulesets} -gt 0 ]]; then
 		python plot_successes.py ruleset_successes.png run_all_benchmarks_outputs/int_rules_data run_all_benchmarks_outputs/fp_rules_data run_all_benchmarks_outputs/logic_as_bool_data run_all_benchmarks_outputs/all_rules_data --rulesets
