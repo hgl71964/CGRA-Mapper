@@ -1,6 +1,8 @@
 #!/bin/zsh
 
-set -eu
+# gh512
+# set -eu
+set -u
 
 typeset use_egraphs use_rewriter use_greedy use_llvm logic_bool_rules int_rules all_rules fp_rules stochastic_rules print_used_rules use_latencies
 zparseopts -D -E -use-latencies=use_latencies -use-egraphs=use_egraphs -use-rewriter=use_rewriter -logic-as-bool-rules=logic_bool_rules -fp-rules=fp_rules -int-rules=int_rules -all-rules=all_rules -use-greedy=use_greedy -stochastic-rules=stochastic_rules -print-used-rules=print_used_rules -use-llvm=use_llvm
@@ -41,6 +43,13 @@ if [[ $2 == *.cpp ]] || [[ $2 == *.c ]]; then
 	cp $original_folder/param_example.json param.json #use the param example to build the actual params.
 	$original_folder/compile.sh kernel.cpp
 	$original_folder/run.sh $original_folder/$lmapper kernel.bc --build
+
+        # gh512
+        if [[ ! -f operations.json ]]; then
+            echo "Building fail"  # if build fails, it doesn't emit operations.json
+            exit 1
+        fi
+
 	if [[ ${#use_latencies} -eq 0 ]]; then
 		$original_folder/build_param.sh $original_folder/param_skeleton operations.json param.json
 	else
@@ -139,23 +148,25 @@ sleep 1
 # 	fi
 # 	echo 'Done Building {/}')" ::: ${files[@]} &> run_output
 
-# non-parallel version (chatGPT)
+# gh512
+# non-parallel version
 declare -i cnt
 cnt=0
 for file in "${files[@]}"
 do
     echo "Starting $file"
-    cp $file kernel_${cnt}.cpp
-    $original_folder/compile.sh $extra_compile_flags kernel_${cnt}.cpp
+    file_prefix="${file%.*}"
+    cp $file kernel_${file_prefix}.cpp
+    $original_folder/compile.sh $extra_compile_flags kernel_${file_prefix}.cpp
     # A small number seem to cause loops somewhere --- just want to get non-buggy results
-    time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${cnt}.bc --params-file $PWD/param.json $extra_flags
+    time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
     if [[ $? != 0 ]] && [[ $egraphs == "true" ]]; then
         # We timed out, so we should fall back to the mapper without
         # rewriting.  This would ideally happen interally within
         # flex, but it means the same thing happening here :)
         echo "Rewriter timed out, running without rewriter."
         # Put a tmeout on this also to avoid infinit e hanging.
-        timeout 90 $original_folder/run.sh $original_folder/$lmapper kernel_${cnt}.bc --use-rewriter --params-file $PWD/param.json
+        timeout 90 $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --use-rewriter --params-file $PWD/param.json
         if [[ $? == 124 ]]; then
             echo "Subrewriter timed out"
         fi
@@ -169,8 +180,8 @@ done > run_output
 # grep --text $output_name -e "Mapping:success" -e "Mapping:fail" -e "Done File: "
 grep --text run_output -e "Mapping:success" -e "Mapping:fail" -e "Done File: "
 
-success=$(grep -ce "Mapping:success" $output_name || echo "")
-fails=$(grep -ce "Mapping:fail" $output_name || echo "")
+success=$(grep -ce "Mapping:success" run_output || echo "")
+fails=$(grep -ce "Mapping:fail" run_output || echo "")
 
 # mv run_output run_output.old
 

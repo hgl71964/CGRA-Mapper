@@ -341,6 +341,7 @@ pub extern "C" fn optimize_with_egraphs(
 
     let rules = load_rulesets(rulesets);
 
+    // let (egraph, mut roots) = dfg_to_egraph_single_root(&dfg);
     let (egraph, mut roots) = dfg_to_egraph(&dfg);
     println!("identified {} roots", roots.len());
     // egraph.dot().to_svg("/tmp/initial.svg").unwrap();
@@ -403,6 +404,7 @@ pub extern "C" fn optimize_with_egraphs(
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
     assert!(dfgs_ptr != std::ptr::null_mut());
     unsafe { *dfgs_ptr = expr_to_dfg(best) };
+    // unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
 
     CppDFGs {
         dfgs: dfgs_ptr,

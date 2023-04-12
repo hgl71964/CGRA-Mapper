@@ -49,7 +49,8 @@ if __name__ == "__main__":
                     # kenerl_ prefixed onto it
                     bname = args.LoopName.split('_')[1]
                 else:
-                    bname = fname.split('_')[2] # at 2 because the script prefixes kernel_ onto things
+                    # print(fname.split('_'))
+                    bname = fname.split('_')[1] # at 2 because the script prefixes kernel_ onto things
                 if success:
                     add(successes_dict, bname)
                     success = False
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
     # Now, do the output of this
     with open(args.OutputFile, 'a') as f:
-        # We do this not as a true CSV because it's possible 
+        # We do this not as a true CSV because it's possible
         # (although it shouldn't happen) that not all benchmarks
         # will be there for each run.
         string = args.LoopName + ":" + str(args.accelerator_size)

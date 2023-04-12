@@ -13,5 +13,5 @@ fi
 echo "Building $f"
 
 set -x
-opt -load $lmapper -mapperPass $f "$@"
+opt -load $lmapper -mapperPass $f $@
 echo "Finished $f"
