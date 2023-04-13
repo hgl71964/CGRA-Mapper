@@ -166,18 +166,19 @@ do
     # time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
     time $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json --use-mcts
 
-    if [[ $? != 0 ]] && [[ $egraphs == "true" ]]; then
-        # We timed out, so we should fall back to the mapper without
-        # rewriting.  This would ideally happen interally within
-        # flex, but it means the same thing happening here :)
-        echo "Rewriter timed out, running without rewriter."
-        # Put a tmeout on this also to avoid infinit e hanging.
-        timeout 90 $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --use-rewriter --params-file $PWD/param.json
-        if [[ $? == 124 ]]; then
-            echo "Subrewriter timed out"
-        fi
-    fi
-    echo "Done Bilding ${file}"
+    # if [[ $? != 0 ]] && [[ $egraphs == "true" ]]; then
+    #     # We timed out, so we should fall back to the mapper without
+    #     # rewriting.  This would ideally happen interally within
+    #     # flex, but it means the same thing happening here :)
+    #     echo "Rewriter timed out, running without rewriter."
+    #     # Put a tmeout on this also to avoid infinit e hanging.
+    #     timeout 90 $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --use-rewriter --params-file $PWD/param.json
+    #     if [[ $? == 124 ]]; then
+    #         echo "Subrewriter timed out"
+    #     fi
+    # fi
+
+    echo "Done ${file}"
     cnt=$((cnt+1))
 done > run_output
 

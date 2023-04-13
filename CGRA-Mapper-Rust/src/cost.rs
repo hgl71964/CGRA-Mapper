@@ -138,6 +138,9 @@ impl CostFunction<SymbolLang> for GreedyBanCost {
                 // println!("Was a dummy node!");
                 // The C part inserts dummy nodes to break cycles.
                 0
+            } else if symbol.as_str() == "__root" {
+                // root
+                0
             } else if self.available.contains(&symbol) {
                 // println!("Found find symbol");
                 1
@@ -157,6 +160,7 @@ impl LpCostFunction<SymbolLang, ()> for GreedyBanCost {
         _eclass: Id,
         enode: &SymbolLang,
     ) -> f64 {
+        assert!(false, "GreedyBanCost ILP?");
         ban_cost(&self.available, &enode.op)
     }
 }
