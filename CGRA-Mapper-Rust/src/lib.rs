@@ -346,7 +346,6 @@ pub extern "C" fn optimize_with_egraphs(
     print_used_rules: bool,
     cost_mode: *const c_char,
 ) -> CppDFGs {
-    println!("[RUST] entering Rust");
     let rules = load_rulesets(rulesets);
     let expr = dfg_to_rooted_expr(&dfg);  // single rooted
     let runner = Runner::default()
@@ -356,16 +355,10 @@ pub extern "C" fn optimize_with_egraphs(
         .with_expr(&expr)
         .with_scheduler(SimpleScheduler);
     let root = runner.roots[0];
-    let mut runner = runner.run(&rules);
-
     let cgrafilename = unsafe { std::ffi::CStr::from_ptr(cgra_params) }
         .to_str()
         .unwrap();
-
-
-
-
-    let start_extraction = std::time::Instant::now();
+    let cost_fn = GreedyBanCost::from_operations_file(cgrafilename);
 
     // ILP
     // let cost = BanCost::from_operations_file(cgrafilename);
@@ -374,12 +367,10 @@ pub extern "C" fn optimize_with_egraphs(
     // let best = extractor.solve(root);
     //
     // GREEDY
-    let cost_fn = GreedyBanCost::from_operations_file(cgrafilename);
+    let (base_cost, _) = Extractor::new(&runner.egraph, cost_fn.clone()).find_best(root);
+    let mut runner = runner.run(&rules);
     let (best_cost, best) = Extractor::new(&runner.egraph, cost_fn).find_best(root);
-    println!("[RUST] {}", best_cost);
-
-    let extraction_time = start_extraction.elapsed();
-    println!("[RUST] extraction took {:?}", extraction_time);
+    println!("[EGG] base_cost {} -> best_cost {}", base_cost, best_cost);
 
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
     assert!(dfgs_ptr != std::ptr::null_mut());
@@ -485,7 +476,8 @@ pub extern "C" fn optimize_with_mcts(
     // build rules, egraph
     assert!(!print_used_rules);
     let rules = load_rulesets(rulesets);
-    println!("[RMCTS] Number of rules: {}", rules.len());
+    let n_threads = std::thread::available_parallelism().unwrap().get();
+    println!("[RMCTS] Number of rules: {} - n_threads {}", rules.len(), n_threads);
 
     let expr = dfg_to_rooted_expr(&dfg);  // single rooted
     let runner = Runner::default().with_expr(&expr);
@@ -498,7 +490,6 @@ pub extern "C" fn optimize_with_mcts(
     let cost_fn = GreedyBanCost::from_operations_file(cgrafilename);
 
     // mcts-geb
-    let n_threads = std::thread::available_parallelism().unwrap().get();
     let args = MCTSArgs {
         budget: 512,
         max_sim_step: 5,
@@ -516,8 +507,6 @@ pub extern "C" fn optimize_with_mcts(
     // TODO Use ILP to extract the optimal results?
     // let (best_cost, best) = LpExtractor::new(&egraph, cost_fn).solve_multiple(&roots[..]);
     let (best_cost, best) = Extractor::new(&egraph, cost_fn).find_best(root);
-
-    println!("[RMCTS] best_cost {}", best_cost);
 
     // to cpp
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;

@@ -163,8 +163,8 @@ do
     $original_folder/compile.sh $extra_compile_flags kernel_${file_prefix}.cpp
 
     # A small number seem to cause loops somewhere --- just want to get non-buggy results
-    # time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
-    time $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json --use-mcts
+    time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
+    # time $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json --use-mcts
 
     # if [[ $? != 0 ]] && [[ $egraphs == "true" ]]; then
     #     # We timed out, so we should fall back to the mapper without
