@@ -4,6 +4,7 @@ use crate::node::{Node, NodeStub};
 use crate::pool_manager;
 use crate::workers::Reply;
 
+#[allow(unused_imports)]
 use egg::{Analysis, CostFunction, EGraph, Id, Language, LpCostFunction, RecExpr, Rewrite};
 use rand::Rng;
 use std::cell::RefCell;
@@ -123,7 +124,7 @@ where
                 max_sim_step,
                 false,
                 egraph.clone(),
-                id,
+                id.clone(),
                 rules.clone(),
                 cf.clone(),
                 lp_extract,
@@ -137,7 +138,7 @@ where
                 max_sim_step,
                 false,
                 egraph.clone(),
-                id,
+                id.clone(),
                 rules.clone(),
                 cf.clone(),
                 lp_extract,
@@ -169,6 +170,7 @@ where
         egraph: EGraph<L, N>,
         id: Id,
         rules: Vec<Rewrite<L, N>>,
+        cost_threshold: usize,
     ) -> EGraph<L, N> {
         // env
         // let mut env = Env::new(expr, rules, self.node_limit, self.time_limit);
@@ -210,7 +212,7 @@ where
             );
             println!("{}", info.report);
             println!("************************");
-            if done {
+            if done || info.best_cost < cost_threshold {
                 break;
             }
         }

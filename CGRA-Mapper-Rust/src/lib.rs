@@ -17,6 +17,7 @@ mod run;
 mod tree;
 mod workers;
 use crate::run::{run_mcts, MCTSArgs};
+// use rmcts::run::{run_mcts, MCTSArgs};
 
 #[repr(C)]
 pub struct CppNode {
@@ -214,13 +215,14 @@ fn expr_to_dfg(expr: RecExpr<SymbolLang>) -> CppDFG {
 
 fn expr_to_dfg_single_root(expr: RecExpr<SymbolLang>) -> CppDFG {
     let enodes = expr.as_ref();
-    let num_enodes = enodes.len() - 1; // exclude the added root
-    let nodes_ptr = unsafe { libc::malloc(num_enodes * size_of::<CppNode>()) } as *mut CppNode;
-    let nodes = unsafe { std::slice::from_raw_parts_mut(nodes_ptr, num_enodes) };
-    let mut find = false;
+    let num_valid_enodes = enodes.len() - 1; // exclude the added root
+    let nodes_ptr = unsafe { libc::malloc(num_valid_enodes * size_of::<CppNode>()) } as *mut CppNode;
+    let nodes = unsafe { std::slice::from_raw_parts_mut(nodes_ptr, num_valid_enodes) };
 
-    for (en, n) in enodes.iter().zip(nodes.iter_mut()) {
-        // exclude the added root
+    // ensure only 1 root
+    let mut find = false;
+    for i in 0..enodes.len() {
+        let en = &enodes[i];
         if en.op.as_str() == "__root" {
             if find {
                 panic!("2 roots?");
@@ -228,6 +230,17 @@ fn expr_to_dfg_single_root(expr: RecExpr<SymbolLang>) -> CppDFG {
             find = true;
             continue;
         }
+    }
+    assert!(find, "cannot find added root, forget to add root?");
+
+    let mut index = 0;
+    for i in 0..enodes.len() {
+        if index == enodes.len() - 2 {
+            break;
+        }
+        let en = &enodes[index];
+        let n = &mut nodes[index];
+
         n.op = std::ffi::CString::new(en.op.as_str()).unwrap().into_raw();
         let child_ids = unsafe { libc::malloc(en.children.len() * size_of::<u32>()) } as *mut u32;
         for (child_id, &c) in
@@ -239,10 +252,7 @@ fn expr_to_dfg_single_root(expr: RecExpr<SymbolLang>) -> CppDFG {
         }
         n.num_children = en.children.len().try_into().unwrap();
         n.child_ids = child_ids;
-    }
-
-    if !find {
-        panic!("cannot find added root, forget to add root?");
+        index += 1;
     }
 
     CppDFG {
@@ -336,81 +346,133 @@ pub extern "C" fn optimize_with_egraphs(
     print_used_rules: bool,
     cost_mode: *const c_char,
 ) -> CppDFGs {
-    println!("entering Rust");
-    // env_logger::init();
-
+    println!("[RUST] entering Rust");
     let rules = load_rulesets(rulesets);
-
-    // let (egraph, mut roots) = dfg_to_egraph_single_root(&dfg);
-    let (egraph, mut roots) = dfg_to_egraph(&dfg);
-    println!("identified {} roots", roots.len());
-    // egraph.dot().to_svg("/tmp/initial.svg").unwrap();
-
+    let expr = dfg_to_rooted_expr(&dfg);  // single rooted
     let runner = Runner::default()
         .with_iter_limit(15)
         .with_node_limit(100_000)
         .with_time_limit(std::time::Duration::from_secs(40))
-        .with_egraph(egraph)
-        // .with_explanations_enabled()
+        .with_expr(&expr)
         .with_scheduler(SimpleScheduler);
-    let runner = if print_used_rules {
-        runner.with_explanations_enabled()
-    } else {
-        runner
-    };
+    let root = runner.roots[0];
     let mut runner = runner.run(&rules);
-    runner.print_report();
-    // runner.egraph.dot().to_svg("/tmp/egraph.svg").unwrap();
-
-    for r in &mut roots[..] {
-        *r = runner.egraph.find(*r);
-    }
 
     let cgrafilename = unsafe { std::ffi::CStr::from_ptr(cgra_params) }
         .to_str()
         .unwrap();
-    let cost_mode_string = unsafe { std::ffi::CStr::from_ptr(cost_mode) }
-        .to_str()
-        .unwrap();
+
+
+
+
     let start_extraction = std::time::Instant::now();
-    let (best, best_roots) = if cost_mode_string == "frequency" {
-        println!("Running egraphs with frequency cost");
-        let cost = LookupCost::from_operations_frequencies(cgrafilename);
-        LpExtractor::new(&runner.egraph, cost).solve_multiple(&roots[..])
-    } else {
-        println!("Running egraphs with ban cost");
-        let cost = BanCost::from_operations_file(cgrafilename);
-        let mut extractor = LpExtractor::new(&runner.egraph, cost);
-        extractor.timeout(30.0);
-        let (exp, ids) = extractor.solve_multiple(&roots[..]);
-        (exp, ids)
-    };
+
+    // ILP
+    // let cost = BanCost::from_operations_file(cgrafilename);
+    // let mut extractor = LpExtractor::new(&runner.egraph, cost);
+    // extractor.timeout(30.0);
+    // let best = extractor.solve(root);
+    //
+    // GREEDY
+    let cost_fn = GreedyBanCost::from_operations_file(cgrafilename);
+    let (best_cost, best) = Extractor::new(&runner.egraph, cost_fn).find_best(root);
+    println!("[RUST] {}", best_cost);
+
     let extraction_time = start_extraction.elapsed();
-    println!("extraction took {:?}", extraction_time);
-
-    println!("Explanation required: {:?}", print_used_rules);
-    if print_used_rules {
-        explanation_statistics(
-            &runner.explain_equivalence(&dfg_to_rooted_expr(&dfg), &rooted_expr(&best, best_roots)),
-        );
-    };
-
-    /* {
-        let mut g: EGraph<SymbolLang, ()> = Default::default();
-        g.add_expr(&best);
-        g.dot().to_svg("/tmp/final.svg").unwrap();
-    } */
+    println!("[RUST] extraction took {:?}", extraction_time);
 
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
     assert!(dfgs_ptr != std::ptr::null_mut());
-    unsafe { *dfgs_ptr = expr_to_dfg(best) };
-    // unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
-
+    unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
     CppDFGs {
         dfgs: dfgs_ptr,
         count: 1,
     }
 }
+
+// #[no_mangle]
+// pub extern "C" fn optimize_with_egraphs(
+//     dfg: CppDFG,
+//     rulesets: Rulesets,
+//     cgra_params: *const c_char,
+//     print_used_rules: bool,
+//     cost_mode: *const c_char,
+// ) -> CppDFGs {
+//     println!("entering Rust");
+//     // env_logger::init();
+//
+//     let rules = load_rulesets(rulesets);
+//
+//     // let (egraph, mut roots) = dfg_to_egraph_single_root(&dfg);
+//     let (egraph, mut roots) = dfg_to_egraph(&dfg);
+//     println!("identified {} roots", roots.len());
+//     // egraph.dot().to_svg("/tmp/initial.svg").unwrap();
+//
+//     let runner = Runner::default()
+//         .with_iter_limit(15)
+//         .with_node_limit(100_000)
+//         .with_time_limit(std::time::Duration::from_secs(40))
+//         .with_egraph(egraph)
+//         // .with_explanations_enabled()
+//         .with_scheduler(SimpleScheduler);
+//     let runner = if print_used_rules {
+//         runner.with_explanations_enabled()
+//     } else {
+//         runner
+//     };
+//     let mut runner = runner.run(&rules);
+//     runner.print_report();
+//     // runner.egraph.dot().to_svg("/tmp/egraph.svg").unwrap();
+//
+//     for r in &mut roots[..] {
+//         *r = runner.egraph.find(*r);
+//     }
+//
+//     let cgrafilename = unsafe { std::ffi::CStr::from_ptr(cgra_params) }
+//         .to_str()
+//         .unwrap();
+//     let cost_mode_string = unsafe { std::ffi::CStr::from_ptr(cost_mode) }
+//         .to_str()
+//         .unwrap();
+//     let start_extraction = std::time::Instant::now();
+//     let (best, best_roots) = if cost_mode_string == "frequency" {
+//         println!("Running egraphs with frequency cost");
+//         let cost = LookupCost::from_operations_frequencies(cgrafilename);
+//         LpExtractor::new(&runner.egraph, cost).solve_multiple(&roots[..])
+//     } else {
+//         println!("Running egraphs with ban cost");
+//         let cost = BanCost::from_operations_file(cgrafilename);
+//         let mut extractor = LpExtractor::new(&runner.egraph, cost);
+//         extractor.timeout(30.0);
+//         let (exp, ids) = extractor.solve_multiple(&roots[..]);
+//         (exp, ids)
+//     };
+//     let extraction_time = start_extraction.elapsed();
+//     println!("extraction took {:?}", extraction_time);
+//
+//     println!("Explanation required: {:?}", print_used_rules);
+//     if print_used_rules {
+//         explanation_statistics(
+//             &runner.explain_equivalence(&dfg_to_rooted_expr(&dfg), &rooted_expr(&best, best_roots)),
+//         );
+//     };
+//
+//     /* {
+//         let mut g: EGraph<SymbolLang, ()> = Default::default();
+//         g.add_expr(&best);
+//         g.dot().to_svg("/tmp/final.svg").unwrap();
+//     } */
+//
+//     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
+//     assert!(dfgs_ptr != std::ptr::null_mut());
+//     unsafe { *dfgs_ptr = expr_to_dfg(best) };
+//     // unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
+//
+//     CppDFGs {
+//         dfgs: dfgs_ptr,
+//         count: 1,
+//     }
+// }
 
 #[no_mangle]
 pub extern "C" fn optimize_with_mcts(
@@ -423,18 +485,16 @@ pub extern "C" fn optimize_with_mcts(
     // build rules, egraph
     assert!(!print_used_rules);
     let rules = load_rulesets(rulesets);
+    println!("[RUST] Number of rules: {}", rules.len());
 
-    // let (egraph, mut roots) = dfg_to_egraph(&dfg);
-    let (egraph, mut roots) = dfg_to_egraph_single_root(&dfg);
-
-    // NOTE: root id does not need to be canonicalized
-    // https://github.com/egraphs-good/egg/blob/967a3db0c059fc17bbb2da8cc4d4c59eb5f093e0/src/egraph.rs#L556
-    // for r in &mut roots[..] {
-    //     *r = egraph.find(*r);
-    // }
-
-    println!("Number of rules: {}", rules.len());
-    println!("identified {} roots", roots.len());
+    let expr = dfg_to_rooted_expr(&dfg);  // single rooted
+    let runner = Runner::default()
+        .with_iter_limit(15)
+        .with_node_limit(100_000)
+        .with_time_limit(std::time::Duration::from_secs(40))
+        .with_expr(&expr)
+        .with_scheduler(SimpleScheduler);
+    let root = runner.roots[0];
 
     // build CostFn
     let cgrafilename = unsafe { std::ffi::CStr::from_ptr(cgra_params) }
@@ -451,13 +511,16 @@ pub extern "C" fn optimize_with_mcts(
         expansion_worker_num: 1,
         simulation_worker_num: n_threads - 1,
         lp_extract: false,
-        node_limit: 1000,
+        node_limit: 5000,
         time_limit: 10,
+        cost_threshold: 10_000,
     };
-    let egraph = run_mcts(egraph, roots[0], rules, cost_fn.clone(), Some(args));
+    let egraph = run_mcts(runner.egraph, root, rules, cost_fn.clone(), Some(args));
     // TODO Use ILP to extract the optimal results?
     // let (best_cost, best) = LpExtractor::new(&egraph, cost_fn).solve_multiple(&roots[..]);
-    let (best_cost, best) = Extractor::new(&egraph, cost_fn).find_best(roots[0]);
+    let (best_cost, best) = Extractor::new(&egraph, cost_fn).find_best(root);
+
+    println!("[RUST] best_cost {}", best_cost);
 
     // to cpp
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;

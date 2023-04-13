@@ -1,4 +1,5 @@
 use crate::tree;
+#[allow(unused_imports)]
 use egg::{Analysis, CostFunction, EGraph, Id, Language, LpCostFunction, RecExpr, Rewrite};
 
 pub struct MCTSArgs {
@@ -11,6 +12,7 @@ pub struct MCTSArgs {
 
     pub node_limit: usize,
     pub time_limit: usize,
+    pub cost_threshold: usize,
 }
 
 pub fn run_mcts<L, N, CF>(
@@ -40,6 +42,7 @@ where
     // egg
     let mut node_limit = 10_000;
     let mut time_limit = 1;
+    let mut cost_threshold = 1;
 
     // overwrite params if possible
     match args {
@@ -54,6 +57,8 @@ where
 
             node_limit = args.node_limit;
             time_limit = args.time_limit;
+
+            cost_threshold = args.cost_threshold;
         }
     }
 
@@ -67,12 +72,12 @@ where
         simulation_worker_num,
         // egg
         egraph.clone(),
-        id,
+        id.clone(),
         rules.clone(),
         cf,
         lp_extract,
         node_limit,
         time_limit,
     );
-    mcts.run_loop(egraph, id, rules.clone())
+    mcts.run_loop(egraph, id, rules.clone(), cost_threshold)
 }

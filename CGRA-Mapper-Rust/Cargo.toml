@@ -16,5 +16,5 @@ libc = "0.2"
 tinyjson = "2"
 
 # gh512
-# rmcts = { git = "https://github.com/hgl71964/rmcts.git", rev = "88ed178"}
+# rmcts = { git = "https://github.com/hgl71964/rmcts.git", rev = "68f35c82e995fe112d3111a3f5ecad641dca691c"}
 rand = { version = "0.8.5"}

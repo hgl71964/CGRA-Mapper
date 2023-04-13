@@ -116,6 +116,8 @@ if [[ ${#print_used_rules} -gt 0 ]]; then
 	extra_flags="$extra_flags --print-used-rules"
 fi
 
+echo "extra_flags:: $extra_flags"
+
 # output_name=$original_folder/$temp_folder/run_output
 # touch $original_folder/$temp_folder/run_output
 # echo $output_name
@@ -159,8 +161,11 @@ do
     file_prefix="${strip_file_prefix%.*}"  # strip whatever after the dot
     cp $file kernel_${file_prefix}.cpp
     $original_folder/compile.sh $extra_compile_flags kernel_${file_prefix}.cpp
+
     # A small number seem to cause loops somewhere --- just want to get non-buggy results
-    time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
+    # time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
+    time $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json --use-mcts
+
     if [[ $? != 0 ]] && [[ $egraphs == "true" ]]; then
         # We timed out, so we should fall back to the mapper without
         # rewriting.  This would ideally happen interally within

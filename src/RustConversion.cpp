@@ -106,6 +106,7 @@ RustDFG toRustDFG(DFG *dfg, Options *options) {
 }
 
 DFGNode *toDFGNode(RustNode n, int32_t id) {
+  assert(n.op);
 	DFGNode *node = new DFGNode(id, false, nullptr, std::string(n.op), std::string(n.op));
 
 	return node;
@@ -131,6 +132,21 @@ DFGNode *getNodeFromIndex(list<DFGNode *> *nodes, int index) {
 }
 
 DFG* toDFG(RustDFG rustDfg) {
+  // print all
+	for (int i = 0; i < rustDfg.num_nodes; i ++) {
+		RustNode rnode = rustDfg.nodes[i];
+    std::cout << rnode.op << " " << rnode.child_ids << std::endl;
+
+		// keep track of the edges we'll need to construct later.
+    std::cout << "children " << std::endl;
+		for (int j = 0; j < rnode.num_children; j ++) {
+			auto child = rnode.child_ids[j];
+      std::cout << child << " ";
+		}
+    std::cout << std::endl;
+	}
+
+
 	if (debugRustConversion)
 		errs() << "Starting to convert to DFG\n";
 

@@ -2,6 +2,7 @@ use crate::eg_env::{Ckpt, EgraphEnv};
 // use crate::env::Env;
 use crate::tree::{ExpTask, SimTask};
 
+#[allow(unused_imports)]
 use egg::{
     Analysis, CostFunction, EGraph, Id, Language, LpCostFunction, RecExpr, Rewrite, StopReason,
 };
@@ -87,12 +88,10 @@ where
                     env.restore(exp_task.checkpoint_data);
                     let expand_action = exp_task.shallow_copy_node.select_expansion_action();
                     let (next_state, reward, done, info) = env.step(expand_action);
-                    let new_checkpoint_data;
-                    if done {
-                        new_checkpoint_data = None;
-                    } else {
-                        new_checkpoint_data = Some(env.checkpoint());
-                    }
+                    let new_checkpoint_data = if done { None } else { Some(env.checkpoint()) };
+
+                    // saturated means this action doesn't match any enode
+                    // so we shouldn't select again!
                     let mut child_saturated = false;
                     match info.report.stop_reason {
                         StopReason::Saturated => child_saturated = true,

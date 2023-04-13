@@ -1,6 +1,7 @@
 use crate::tree::{ExpTask, SimTask};
 use crate::workers::{worker_loop, Message, Reply};
 
+#[allow(unused_imports)]
 use egg::{Analysis, CostFunction, EGraph, Id, Language, LpCostFunction, RecExpr, Rewrite};
 use std::marker::PhantomData;
 use std::sync::mpsc::{Receiver, Sender};
@@ -67,7 +68,7 @@ where
                 max_sim_step,
                 verbose,
                 egraph.clone(),
-                id,
+                id.clone(),
                 rules.clone(),
                 cf.clone(),
                 lp_extract,
