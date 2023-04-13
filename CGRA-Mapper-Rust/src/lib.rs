@@ -488,7 +488,7 @@ pub extern "C" fn optimize_with_mcts(
     println!("[RMCTS] Number of rules: {}", rules.len());
 
     let expr = dfg_to_rooted_expr(&dfg);  // single rooted
-    let runner = Runner::default().with_expr(&expr)
+    let runner = Runner::default().with_expr(&expr);
     let root = runner.roots[0];
 
     // build CostFn
