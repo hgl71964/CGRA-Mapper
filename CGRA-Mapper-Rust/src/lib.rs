@@ -485,7 +485,7 @@ pub extern "C" fn optimize_with_mcts(
     // build rules, egraph
     assert!(!print_used_rules);
     let rules = load_rulesets(rulesets);
-    println!("[RUST] Number of rules: {}", rules.len());
+    println!("[RMCTS] Number of rules: {}", rules.len());
 
     let expr = dfg_to_rooted_expr(&dfg);  // single rooted
     let runner = Runner::default()
@@ -509,18 +509,20 @@ pub extern "C" fn optimize_with_mcts(
         max_sim_step: 5,
         gamma: 0.90,
         expansion_worker_num: 1,
+        cost_threshold: 10_000,
+        iter_limit: 30,
+
         simulation_worker_num: n_threads - 1,
         lp_extract: false,
         node_limit: 5000,
         time_limit: 10,
-        cost_threshold: 10_000,
     };
     let egraph = run_mcts(runner.egraph, root, rules, cost_fn.clone(), Some(args));
     // TODO Use ILP to extract the optimal results?
     // let (best_cost, best) = LpExtractor::new(&egraph, cost_fn).solve_multiple(&roots[..]);
     let (best_cost, best) = Extractor::new(&egraph, cost_fn).find_best(root);
 
-    println!("[RUST] best_cost {}", best_cost);
+    println!("[RMCTS] best_cost {}", best_cost);
 
     // to cpp
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
