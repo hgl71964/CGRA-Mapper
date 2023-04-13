@@ -155,7 +155,8 @@ cnt=0
 for file in "${files[@]}"
 do
     echo "Starting $file"
-    file_prefix="${file%.*}"
+    strip_file_prefix=$(basename "$file")
+    file_prefix="${strip_file_prefix%.*}"  # strip whatever after the dot
     cp $file kernel_${file_prefix}.cpp
     $original_folder/compile.sh $extra_compile_flags kernel_${file_prefix}.cpp
     # A small number seem to cause loops somewhere --- just want to get non-buggy results
