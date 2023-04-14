@@ -28,7 +28,8 @@ if [[ ${#print_used_rules} -gt 0 ]]; then
 fi
 
 mkdir -p $output/stdout
-mkdir -p $output/{temp_architecture_greedy,temp_architecture_llvm,temp_architecture_no_rules,temp_architecture_rewriter}
+# mkdir -p $output/{temp_architecture_greedy,temp_architecture_llvm,temp_architecture_no_rules,temp_architecture_rewriter}
+mkdir -p $output/temp_architecture_rewriter
 
 # if [[ ${#rewriter_only} -eq 0 ]]; then
 # 	echo "Starting $param_file without rules"

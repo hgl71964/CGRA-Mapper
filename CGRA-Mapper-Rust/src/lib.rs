@@ -235,11 +235,16 @@ fn expr_to_dfg_single_root(expr: RecExpr<SymbolLang>) -> CppDFG {
 
     let mut index = 0;
     for i in 0..enodes.len() {
-        if index == enodes.len() - 2 {
+        let en = &enodes[i];
+        if en.op.as_str() == "__root" {
+            continue;
+        }
+
+        if index == enodes.len() - 1 {
             break;
         }
-        let en = &enodes[index];
         let n = &mut nodes[index];
+        index += 1;
 
         n.op = std::ffi::CString::new(en.op.as_str()).unwrap().into_raw();
         let child_ids = unsafe { libc::malloc(en.children.len() * size_of::<u32>()) } as *mut u32;
@@ -252,12 +257,11 @@ fn expr_to_dfg_single_root(expr: RecExpr<SymbolLang>) -> CppDFG {
         }
         n.num_children = en.children.len().try_into().unwrap();
         n.child_ids = child_ids;
-        index += 1;
     }
 
     CppDFG {
         nodes: nodes_ptr,
-        count: enodes.len().try_into().unwrap(),
+        count: num_valid_enodes.try_into().unwrap(),
     }
 }
 
@@ -375,6 +379,7 @@ pub extern "C" fn optimize_with_egraphs(
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
     assert!(dfgs_ptr != std::ptr::null_mut());
     unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
+    // unsafe { *dfgs_ptr = expr_to_dfg(best) };
     CppDFGs {
         dfgs: dfgs_ptr,
         count: 1,
