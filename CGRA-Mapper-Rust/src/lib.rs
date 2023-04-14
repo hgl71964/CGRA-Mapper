@@ -495,30 +495,34 @@ pub extern "C" fn optimize_with_mcts(
     let cost_fn = GreedyBanCost::from_operations_file(cgrafilename);
 
     // mcts-geb
-    let args = MCTSArgs {
-        budget: 512,
-        max_sim_step: 5,
-        gamma: 0.90,
-        expansion_worker_num: 1,
-        cost_threshold: 10_000,
-        iter_limit: 30,
+    let cost_threshold = 10_000;
+    let (mut best_cost, mut best) = Extractor::new(&runner.egraph, cost_fn.clone()).find_best(root);
+    if best_cost < cost_threshold {
+        println!("[RMCTS] expr OK without RMCTS - cost {}", best_cost);
+    } else {
+        let args = MCTSArgs {
+            budget: 512,
+            max_sim_step: 5,
+            gamma: 0.90,
+            expansion_worker_num: 1,
+            cost_threshold: cost_threshold,
+            iter_limit: 30,
 
-        simulation_worker_num: n_threads - 1,
-        lp_extract: false,
-        node_limit: 5000,
-        time_limit: 10,
-    };
-    let egraph = run_mcts(runner.egraph, root, rules, cost_fn.clone(), Some(args));
-    // TODO Use ILP to extract the optimal results?
-    // let (best_cost, best) = LpExtractor::new(&egraph, cost_fn).solve_multiple(&roots[..]);
-    let (best_cost, best) = Extractor::new(&egraph, cost_fn).find_best(root);
+            simulation_worker_num: n_threads - 1,
+            lp_extract: false,
+            node_limit: 5000,
+            time_limit: 10,
+        };
+        let egraph = run_mcts(runner.egraph, root, rules, cost_fn.clone(), Some(args));
+        // TODO Use ILP to extract the optimal results?
+        // let (best_cost, best) = LpExtractor::new(&egraph, cost_fn).solve(root);
+        best_cost, best = Extractor::new(&egraph, cost_fn).find_best(root);
+    }
 
     // to cpp
     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
     assert!(dfgs_ptr != std::ptr::null_mut());
-
-    // unsafe { *dfgs_ptr = expr_to_dfg(best) };
-    unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
+    unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };  // will filter out the added root
 
     CppDFGs {
         dfgs: dfgs_ptr,
