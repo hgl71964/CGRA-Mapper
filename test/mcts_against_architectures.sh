@@ -31,7 +31,7 @@ mkdir -p $output/stdout
 mkdir -p $output/temp_architecture_mcts
 
 
-echo "Staring $param_file  with rewriter"
-./mcts_tests_against.sh $fraction_to_run $param_file $bmarks $output/temp_architecture_rewriter --use-rewriter $@ &> $output/stdout/rewriter.out
+echo "Staring $param_file  with MCTS-GEB"
+./mcts_tests_against.sh $fraction_to_run $param_file $bmarks $output/temp_architecture_mcts --use-rewriter $@ &> $output/stdout/mcts.out
 # cp $output/temp_architecture_rewriter/run_output $output/rewriter.out
 # rm -rf $output/temp_architecture_rewriter
