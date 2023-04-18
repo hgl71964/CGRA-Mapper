@@ -127,7 +127,7 @@ declare -i cnt
 cnt=0
 for file in "${files[@]}"
 do
-    echo "Starting $file"
+    echo "Starting_mapping $file"
     strip_file_prefix=$(basename "$file")
     file_prefix="${strip_file_prefix%.*}"  # strip whatever after the dot
     cp $file kernel_${file_prefix}.cpp
@@ -137,7 +137,7 @@ do
     # time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
     time $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json --use-mcts
 
-    echo "Done ${file}"
+    echo "Done_mapping ${file}"
     cnt=$((cnt+1))
 done > run_output
 

@@ -498,7 +498,7 @@ pub extern "C" fn optimize_with_mcts(
     let cost_threshold = 10_000;
     let (mut best_cost, mut best) = Extractor::new(&runner.egraph, cost_fn.clone()).find_best(root);
     if best_cost < cost_threshold {
-        println!("[RMCTS] expr OK without RMCTS - cost {}", best_cost);
+        println!("[RMCTS] expr OK without mcts - cost {}", best_cost);
     } else {
         let args = MCTSArgs {
             budget: 512,

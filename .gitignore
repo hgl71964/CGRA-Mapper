@@ -23,3 +23,8 @@ test/tmp_dir
 test/cgra_performances/
 test/loop*
 test/all_benchmarks_output*
+loop_*
+cca-*
+maeri-*
+revamp-*
+sc-cgra-*
