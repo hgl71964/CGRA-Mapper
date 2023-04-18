@@ -166,6 +166,8 @@ void runMapping(CGRA *cgra, DFG *dfg, Parameters *params, Options *options) {
         errs() << "[Mapping:fail]\n";
     else
     {
+        cout << "==================================\n";
+        cout << "ShowSchedule\n";
         mapper->showSchedule(cgra, mapResult->winningDFG(), mapResult, params->isStaticElasticCGRA);
         // if (!already_printed) {
             cout << "==================================\n";

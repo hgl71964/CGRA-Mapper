@@ -139,7 +139,7 @@ do
 
     echo "Done_mapping ${file}"
     cnt=$((cnt+1))
-done > run_output
+done &> run_output
 
 # Get the successes/fails for each file and print them for further parsing.
 # These should be in order, so you get a succ/fail followed by a done that corresponds to it.
