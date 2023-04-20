@@ -47,7 +47,7 @@ if [[ ${#plot_only} -eq 0 ]]; then
 		echo "Starting benchmark $file"
 		bfile=$(basename $file)
 		echo "Starting with MCTS $file"
-		time ./mcts_tests_against.sh $reduction_rate $file $folder $temp_folder &> run_all_benchmarks_outputs/stdout/${bfile}.rewriter
+		time ./mcts_tests_against.sh $reduction_rate $file $folder $temp_folder &> run_all_benchmarks_outputs/stdout/${bfile}.mcts
 		cp $temp_folder/run_output run_all_benchmarks_outputs/stdout/${bfile}.mcts.output
 
 		# Run the rewriter with just the boolean ruleset enabled.
