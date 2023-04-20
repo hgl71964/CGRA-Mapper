@@ -33,5 +33,5 @@ mkdir -p $output/temp_architecture_mcts
 
 echo "Staring $param_file  with MCTS-GEB"
 ./mcts_tests_against.sh $fraction_to_run $param_file $bmarks $output/temp_architecture_mcts $@ &> $output/stdout/mcts.out
-# cp $output/temp_architecture_rewriter/run_output $output/rewriter.out
-# rm -rf $output/temp_architecture_rewriter
+cp $output/temp_architecture_mcts/run_output $output/mcts.out
+rm -rf $output/temp_architecture_mcts

@@ -498,7 +498,7 @@ pub extern "C" fn optimize_with_mcts(
     let cost_threshold = 10_000;
     let (mut best_cost, mut best) = Extractor::new(&runner.egraph, cost_fn.clone()).find_best(root);
     if best_cost < cost_threshold {
-        println!("[RMCTS] expr OK without mcts - cost {}", best_cost);
+        println!("[RMCTS] expr OK without mcts -> cost {}", best_cost);
     } else {
         let args = MCTSArgs {
             budget: 512,
@@ -510,13 +510,19 @@ pub extern "C" fn optimize_with_mcts(
 
             simulation_worker_num: n_threads - 1,
             lp_extract: false,
-            node_limit: 5000,
+            node_limit: 5000,  // 10_000 causes much more opportunities?
             time_limit: 10,
         };
         let egraph = run_mcts(runner.egraph, root, rules, cost_fn.clone(), Some(args));
-        // TODO Use ILP to extract the optimal results?
-        // let (best_cost, best) = LpExtractor::new(&egraph, cost_fn).solve(root);
+
+        // GREEDY
         (best_cost, best) = Extractor::new(&egraph, cost_fn).find_best(root);
+
+        // ILP
+        // let cost = BanCost::from_operations_file(cgrafilename);
+        // let mut extractor = LpExtractor::new(&egraph, cost);
+        // extractor.timeout(30.0);
+        // best = extractor.solve(root);
     }
 
     // to cpp

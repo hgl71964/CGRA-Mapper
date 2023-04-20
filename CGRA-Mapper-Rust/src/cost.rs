@@ -1,5 +1,6 @@
 use egg::*;
 use std::collections::{HashMap, HashSet};
+use rand::Rng;
 
 // This thing loads the operations in from a JSON file,
 // returning all the available operations and their count.
@@ -133,6 +134,7 @@ impl CostFunction<SymbolLang> for GreedyBanCost {
         C: FnMut(Id) -> Self::Cost,
     {
         let symbol = enode.op;
+        // let mut rng = rand::thread_rng();
         let op_cost =
             if symbol.as_str().starts_with("Dummy") || symbol.as_str().starts_with("const") {
                 // println!("Was a dummy node!");
@@ -143,6 +145,7 @@ impl CostFunction<SymbolLang> for GreedyBanCost {
                 0
             } else if self.available.contains(&symbol) {
                 // println!("Found find symbol");
+                // rng.gen_range(1..5)  // add randomness help mcts simulation?
                 1
             } else {
                 // println!("Didn't find symbol {}", symbol.as_str());

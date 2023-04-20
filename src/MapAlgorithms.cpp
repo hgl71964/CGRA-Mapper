@@ -21,10 +21,10 @@ MapResult *doMap(Options *options, Parameters *params, CGRA *cgra, Mapper *mappe
         // time if we didn't use egraphs.
         // anyway, suspect it's negligable.
         dfg->rejoinCycles();
-		if (options->DebugMappingLoop) {
-			cout << "Opcode distribtuion after rejoining cycles is \n";
-			dfg->showOpcodeDistribution();
-		}
+        if (options->DebugMappingLoop) {
+          cout << "Opcode distribtuion after rejoining cycles is \n";
+          dfg->showOpcodeDistribution();
+        }
 
         MapResult *res = mapper->heuristicMap(params, options, cgra, dfg, II);
 
@@ -33,6 +33,9 @@ MapResult *doMap(Options *options, Parameters *params, CGRA *cgra, Mapper *mappe
             delete winning_res;
             winning_res = res;
         }
+
+        cout << "DFG Number " << dfg_no << " had II " << res->II() << " fail? " << res->failed() << endl;
+
         if (options->DebugMappingLoop)
         {
             cout << "DFG Number " << dfg_no << " had II " << res->II() << endl;
