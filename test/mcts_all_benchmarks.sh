@@ -97,15 +97,15 @@ get_successes() {
 }
 if [[ ${#gather_only} -eq 0 ]]; then
 	# clear them incase we are running --plot-only
-	echo -n "" > run_all_benchmarks_outputs/no_rules_data
-	echo -n "" > run_all_benchmarks_outputs/llvm_data
-	echo -n "" > run_all_benchmarks_outputs/greedy_data
-	echo -n "" > run_all_benchmarks_outputs/rewriter_data
+	# echo -n "" > run_all_benchmarks_outputs/no_rules_data
+	# echo -n "" > run_all_benchmarks_outputs/llvm_data
+	# echo -n "" > run_all_benchmarks_outputs/greedy_data
+	echo -n "" > run_all_benchmarks_outputs/mcts_data
 
-	echo -n "" > run_all_benchmarks_outputs/no_rules_data_by_benchmark
-	echo -n "" > run_all_benchmarks_outputs/llvm_data_by_benchmark
-	echo -n "" > run_all_benchmarks_outputs/greedy_data_by_benchmark
-	echo -n "" > run_all_benchmarks_outputs/rewriter_data_by_benchmark
+	# echo -n "" > run_all_benchmarks_outputs/no_rules_data_by_benchmark
+	# echo -n "" > run_all_benchmarks_outputs/llvm_data_by_benchmark
+	# echo -n "" > run_all_benchmarks_outputs/greedy_data_by_benchmark
+	echo -n "" > run_all_benchmarks_outputs/mcts_data_by_benchmark
 
 	if [[ ${#run_individual_rulesets} -gt 0 ]]; then
 		echo -n "" > run_all_benchmarks_outputs/logic_as_bool_data
@@ -122,10 +122,7 @@ if [[ ${#gather_only} -eq 0 ]]; then
 	for file in ${target_files[@]}; do
 		bfile=$(basename $file)
 
-		get_successes ${bfile}.no_rules no_rules_data
-		get_successes ${bfile}.llvm llvm_data
-		get_successes ${bfile}.greedy greedy_data
-		get_successes ${bfile}.rewriter rewriter_data
+		get_successes ${bfile}.mcts mcts_data
 
 		if [[ ${#run_individual_rulesets} -gt 0 ]]; then
 			get_successes ${bfile}.logic_as_bool logic_as_bool_data

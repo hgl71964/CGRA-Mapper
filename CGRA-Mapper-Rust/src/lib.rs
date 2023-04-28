@@ -342,50 +342,6 @@ fn explanation_statistics(e: &Explanation<SymbolLang>) {
     println!("done listing rules");
 }
 
-#[no_mangle]
-pub extern "C" fn optimize_with_egraphs(
-    dfg: CppDFG,
-    rulesets: Rulesets,
-    cgra_params: *const c_char,
-    print_used_rules: bool,
-    cost_mode: *const c_char,
-) -> CppDFGs {
-    let rules = load_rulesets(rulesets);
-    let expr = dfg_to_rooted_expr(&dfg);  // single rooted
-    let runner = Runner::default()
-        .with_iter_limit(15)
-        .with_node_limit(100_000)
-        .with_time_limit(std::time::Duration::from_secs(40))
-        .with_expr(&expr)
-        .with_scheduler(SimpleScheduler);
-    let root = runner.roots[0];
-    let cgrafilename = unsafe { std::ffi::CStr::from_ptr(cgra_params) }
-        .to_str()
-        .unwrap();
-    let cost_fn = GreedyBanCost::from_operations_file(cgrafilename);
-
-    // ILP
-    // let cost = BanCost::from_operations_file(cgrafilename);
-    // let mut extractor = LpExtractor::new(&runner.egraph, cost);
-    // extractor.timeout(30.0);
-    // let best = extractor.solve(root);
-    //
-    // GREEDY
-    let (base_cost, _) = Extractor::new(&runner.egraph, cost_fn.clone()).find_best(root);
-    let mut runner = runner.run(&rules);
-    let (best_cost, best) = Extractor::new(&runner.egraph, cost_fn).find_best(root);
-    println!("[EGG] base_cost {} -> best_cost {}", base_cost, best_cost);
-
-    let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
-    assert!(dfgs_ptr != std::ptr::null_mut());
-    unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
-    // unsafe { *dfgs_ptr = expr_to_dfg(best) };
-    CppDFGs {
-        dfgs: dfgs_ptr,
-        count: 1,
-    }
-}
-
 // #[no_mangle]
 // pub extern "C" fn optimize_with_egraphs(
 //     dfg: CppDFG,
@@ -394,81 +350,123 @@ pub extern "C" fn optimize_with_egraphs(
 //     print_used_rules: bool,
 //     cost_mode: *const c_char,
 // ) -> CppDFGs {
-//     println!("entering Rust");
-//     // env_logger::init();
-//
 //     let rules = load_rulesets(rulesets);
-//
-//     // let (egraph, mut roots) = dfg_to_egraph_single_root(&dfg);
-//     let (egraph, mut roots) = dfg_to_egraph(&dfg);
-//     println!("identified {} roots", roots.len());
-//     // egraph.dot().to_svg("/tmp/initial.svg").unwrap();
-//
+//     let expr = dfg_to_rooted_expr(&dfg);  // single rooted
 //     let runner = Runner::default()
 //         .with_iter_limit(15)
 //         .with_node_limit(100_000)
 //         .with_time_limit(std::time::Duration::from_secs(40))
-//         .with_egraph(egraph)
-//         // .with_explanations_enabled()
+//         .with_expr(&expr)
 //         .with_scheduler(SimpleScheduler);
-//     let runner = if print_used_rules {
-//         runner.with_explanations_enabled()
-//     } else {
-//         runner
-//     };
-//     let mut runner = runner.run(&rules);
-//     runner.print_report();
-//     // runner.egraph.dot().to_svg("/tmp/egraph.svg").unwrap();
-//
-//     for r in &mut roots[..] {
-//         *r = runner.egraph.find(*r);
-//     }
-//
+//     let root = runner.roots[0];
 //     let cgrafilename = unsafe { std::ffi::CStr::from_ptr(cgra_params) }
 //         .to_str()
 //         .unwrap();
-//     let cost_mode_string = unsafe { std::ffi::CStr::from_ptr(cost_mode) }
-//         .to_str()
-//         .unwrap();
-//     let start_extraction = std::time::Instant::now();
-//     let (best, best_roots) = if cost_mode_string == "frequency" {
-//         println!("Running egraphs with frequency cost");
-//         let cost = LookupCost::from_operations_frequencies(cgrafilename);
-//         LpExtractor::new(&runner.egraph, cost).solve_multiple(&roots[..])
-//     } else {
-//         println!("Running egraphs with ban cost");
-//         let cost = BanCost::from_operations_file(cgrafilename);
-//         let mut extractor = LpExtractor::new(&runner.egraph, cost);
-//         extractor.timeout(30.0);
-//         let (exp, ids) = extractor.solve_multiple(&roots[..]);
-//         (exp, ids)
-//     };
-//     let extraction_time = start_extraction.elapsed();
-//     println!("extraction took {:?}", extraction_time);
+//     let cost_fn = GreedyBanCost::from_operations_file(cgrafilename);
 //
-//     println!("Explanation required: {:?}", print_used_rules);
-//     if print_used_rules {
-//         explanation_statistics(
-//             &runner.explain_equivalence(&dfg_to_rooted_expr(&dfg), &rooted_expr(&best, best_roots)),
-//         );
-//     };
-//
-//     /* {
-//         let mut g: EGraph<SymbolLang, ()> = Default::default();
-//         g.add_expr(&best);
-//         g.dot().to_svg("/tmp/final.svg").unwrap();
-//     } */
+//     // ILP
+//     // let cost = BanCost::from_operations_file(cgrafilename);
+//     // let mut extractor = LpExtractor::new(&runner.egraph, cost);
+//     // extractor.timeout(30.0);
+//     // let best = extractor.solve(root);
+//     //
+//     // GREEDY
+//     let (base_cost, _) = Extractor::new(&runner.egraph, cost_fn.clone()).find_best(root);
+//     let mut runner = runner.run(&rules);
+//     let (best_cost, best) = Extractor::new(&runner.egraph, cost_fn).find_best(root);
+//     println!("[EGG] base_cost {} -> best_cost {}", base_cost, best_cost);
 //
 //     let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
 //     assert!(dfgs_ptr != std::ptr::null_mut());
-//     unsafe { *dfgs_ptr = expr_to_dfg(best) };
-//     // unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
-//
+//     unsafe { *dfgs_ptr = expr_to_dfg_single_root(best) };
+//     // unsafe { *dfgs_ptr = expr_to_dfg(best) };
 //     CppDFGs {
 //         dfgs: dfgs_ptr,
 //         count: 1,
 //     }
 // }
+
+#[no_mangle]
+pub extern "C" fn optimize_with_egraphs(
+    dfg: CppDFG,
+    rulesets: Rulesets,
+    cgra_params: *const c_char,
+    print_used_rules: bool,
+    cost_mode: *const c_char,
+) -> CppDFGs {
+    println!("entering Rust");
+    // env_logger::init();
+
+    let rules = load_rulesets(rulesets);
+
+    let (egraph, mut roots) = dfg_to_egraph(&dfg);
+    println!("identified {} roots", roots.len());
+    // egraph.dot().to_svg("/tmp/initial.svg").unwrap();
+
+    let runner = Runner::default()
+        .with_iter_limit(15)
+        .with_node_limit(100_000)
+        .with_time_limit(std::time::Duration::from_secs(40))
+        .with_egraph(egraph)
+        // .with_explanations_enabled()
+        .with_scheduler(SimpleScheduler);
+    let runner = if print_used_rules {
+        runner.with_explanations_enabled()
+    } else {
+        runner
+    };
+    let mut runner = runner.run(&rules);
+    runner.print_report();
+    // runner.egraph.dot().to_svg("/tmp/egraph.svg").unwrap();
+
+    for r in &mut roots[..] {
+        *r = runner.egraph.find(*r);
+    }
+
+    let cgrafilename = unsafe { std::ffi::CStr::from_ptr(cgra_params) }
+        .to_str()
+        .unwrap();
+    let cost_mode_string = unsafe { std::ffi::CStr::from_ptr(cost_mode) }
+        .to_str()
+        .unwrap();
+    let start_extraction = std::time::Instant::now();
+    let (best, best_roots) = if cost_mode_string == "frequency" {
+        println!("Running egraphs with frequency cost");
+        let cost = LookupCost::from_operations_frequencies(cgrafilename);
+        LpExtractor::new(&runner.egraph, cost).solve_multiple(&roots[..])
+    } else {
+        println!("Running egraphs with ban cost");
+        let cost = BanCost::from_operations_file(cgrafilename);
+        let mut extractor = LpExtractor::new(&runner.egraph, cost);
+        extractor.timeout(30.0);
+        let (exp, ids) = extractor.solve_multiple(&roots[..]);
+        (exp, ids)
+    };
+    let extraction_time = start_extraction.elapsed();
+    println!("extraction took {:?}", extraction_time);
+
+    println!("Explanation required: {:?}", print_used_rules);
+    if print_used_rules {
+        explanation_statistics(
+            &runner.explain_equivalence(&dfg_to_rooted_expr(&dfg), &rooted_expr(&best, best_roots)),
+        );
+    };
+
+    /* {
+        let mut g: EGraph<SymbolLang, ()> = Default::default();
+        g.add_expr(&best);
+        g.dot().to_svg("/tmp/final.svg").unwrap();
+    } */
+
+    let dfgs_ptr = unsafe { libc::malloc(size_of::<CppDFG>()) } as *mut CppDFG;
+    assert!(dfgs_ptr != std::ptr::null_mut());
+    unsafe { *dfgs_ptr = expr_to_dfg(best) };
+
+    CppDFGs {
+        dfgs: dfgs_ptr,
+        count: 1,
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn optimize_with_mcts(
@@ -499,6 +497,24 @@ pub extern "C" fn optimize_with_mcts(
     let (mut best_cost, mut best) = Extractor::new(&runner.egraph, cost_fn.clone()).find_best(root);
     if best_cost < cost_threshold {
         println!("[RMCTS] expr OK without mcts -> cost {}", best_cost);
+        // Use ILP to extract anyways?
+        //
+        // let (egraph, mut roots) = dfg_to_egraph(&dfg);
+        // let runner = Runner::default()
+        //     .with_iter_limit(15)
+        //     .with_node_limit(100_000)
+        //     .with_time_limit(std::time::Duration::from_secs(40))
+        //     .with_egraph(egraph)
+        //     .with_scheduler(SimpleScheduler)
+        //     .run(&rules);
+        // for r in &mut roots[..] {
+        //     *r = runner.egraph.find(*r);
+        // }
+        // let cost = BanCost::from_operations_file(cgrafilename);
+        // let mut extractor = LpExtractor::new(&runner.egraph, cost);
+        // extractor.timeout(30.0);
+        // let (best_expr, best_roots) = extractor.solve_multiple(&roots[..]);
+        // best = best_expr;
     } else {
         let args = MCTSArgs {
             budget: 512,
@@ -506,11 +522,11 @@ pub extern "C" fn optimize_with_mcts(
             gamma: 0.90,
             expansion_worker_num: 1,
             cost_threshold: cost_threshold,
-            iter_limit: 30,
+            iter_limit: 15,
 
             simulation_worker_num: n_threads - 1,
             lp_extract: false,
-            node_limit: 5000,  // 10_000 causes much more opportunities?
+            node_limit: 5000,  // TODO 10_000 brings much more opportunities?
             time_limit: 10,
         };
         let egraph = run_mcts(runner.egraph, root, rules, cost_fn.clone(), Some(args));

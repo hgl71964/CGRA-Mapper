@@ -129,26 +129,22 @@ void runMapping(CGRA *cgra, DFG *dfg, Parameters *params, Options *options) {
       // gh512
     {
         cout << "Using FlexC MCTS Mode\n";
-        // TODO implement fallback??
         // call the copy constructor
-        // DFG copied_dfg(*dfg); // need to copy before this changes the DFG.
-        // generated_dfgs = rewrite_with_graphs(options, cgra, dfg);
-        // mapResult = doMap(options, params, cgra, mapper, generated_dfgs, II);
-
-        // if (mapResult->failed()) {
-        //     cout << "Falling back to EGraphs\n";
-        //     // try again with egraphs.
-        //     generated_dfgs = rewrite_with_egraphs(options, cgra, &copied_dfg);
-        //     mapResult = doMap(options, params, cgra, mapper, generated_dfgs, II);
-        // } else {
-        //     errs() << "Initial Greedy Pass Succeeded\n";
-        //     // errs() << "==================================\n";
-        //     errs() << "[Mapping:success]\n";
-        //     greedy_success = true;
-        //     // errs() << "II: " << mapResult->II() << "\n";
-        // }
+        DFG copied_dfg(*dfg); // need to copy before this changes the DFG.
         generated_dfgs = rewrite_with_mcts(options, cgra, dfg);
         mapResult = doMap(options, params, cgra, mapper, generated_dfgs, II);
+        // NOTE: the cost model is wrong; i.e. even if rmcts gets a acceptable IRs
+        // the mapping still fail! So fall back to egraph
+        if (mapResult->failed()) {
+            generated_dfgs = rewrite_with_egraphs(options, cgra, &copied_dfg);
+            mapResult = doMap(options, params, cgra, mapper, generated_dfgs, II);
+        } else {
+          errs() << "Initial RMCTS Pass Succeeded\n";
+          // errs() << "==================================\n";
+          errs() << "[Mapping:success]\n";
+          greedy_success = true;
+          // errs() << "II: " << mapResult->II() << "\n";
+        }
     }
     else
     {
