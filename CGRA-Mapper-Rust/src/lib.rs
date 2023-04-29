@@ -524,7 +524,8 @@ pub extern "C" fn optimize_with_mcts(
             cost_threshold: cost_threshold,
             iter_limit: 15,
 
-            simulation_worker_num: n_threads - 1,
+            // simulation_worker_num: n_threads - 1,
+            simulation_worker_num: 1,
             lp_extract: false,
             node_limit: 5000,  // TODO 10_000 brings much more opportunities?
             time_limit: 10,

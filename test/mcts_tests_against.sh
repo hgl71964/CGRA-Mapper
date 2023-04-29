@@ -121,25 +121,34 @@ echo "extra_flags:: $extra_flags"
 touch run_output
 sleep 1
 
-# gh512
+
+
+# parallel version
+parallel "(
+	echo 'Starting {}'
+	cp {} kernel_{/.}.cpp
+	$original_folder/compile.sh $extra_compile_flags kernel_{/.}.cpp
+	time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_{/.}.bc --params-file $PWD/param.json --use-mcts
+	echo 'Done Building {/}')" ::: ${files[@]} &> run_output
+
 # non-parallel version
-declare -i cnt
-cnt=0
-for file in "${files[@]}"
-do
-    echo "Starting_mapping $file"
-    strip_file_prefix=$(basename "$file")
-    file_prefix="${strip_file_prefix%.*}"  # strip whatever after the dot
-    cp $file kernel_${file_prefix}.cpp
-    $original_folder/compile.sh $extra_compile_flags kernel_${file_prefix}.cpp
-
-    # A small number seem to cause loops somewhere --- just want to get non-buggy results
-    # time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
-    time $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json --use-mcts
-
-    echo "Done_mapping ${file}"
-    cnt=$((cnt+1))
-done &> run_output
+# declare -i cnt
+# cnt=0
+# for file in "${files[@]}"
+# do
+#     echo "Starting_mapping $file"
+#     strip_file_prefix=$(basename "$file")
+#     file_prefix="${strip_file_prefix%.*}"  # strip whatever after the dot
+#     cp $file kernel_${file_prefix}.cpp
+#     $original_folder/compile.sh $extra_compile_flags kernel_${file_prefix}.cpp
+#
+#     # A small number seem to cause loops somewhere --- just want to get non-buggy results
+#     # time timeout $timeout $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json $extra_flags
+#     time $original_folder/run.sh $original_folder/$lmapper kernel_${file_prefix}.bc --params-file $PWD/param.json --use-mcts
+#
+#     echo "Done_mapping ${file}"
+#     cnt=$((cnt+1))
+# done &> run_output
 
 # Get the successes/fails for each file and print them for further parsing.
 # These should be in order, so you get a succ/fail followed by a done that corresponds to it.
