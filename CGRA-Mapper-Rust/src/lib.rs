@@ -517,17 +517,17 @@ pub extern "C" fn optimize_with_mcts(
         // best = best_expr;
     } else {
         let args = MCTSArgs {
-            budget: 512,
+            budget: 384,
             max_sim_step: 5,
             gamma: 0.90,
             expansion_worker_num: 1,
             cost_threshold: cost_threshold,
-            iter_limit: 15,
+            iter_limit: 10,
 
             // simulation_worker_num: n_threads - 1,
             simulation_worker_num: 1,
             lp_extract: false,
-            node_limit: 5000,  // TODO 10_000 brings much more opportunities?
+            node_limit: 5000,
             time_limit: 10,
         };
         let egraph = run_mcts(runner.egraph, root, rules, cost_fn.clone(), Some(args));
