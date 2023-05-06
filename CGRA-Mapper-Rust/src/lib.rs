@@ -527,7 +527,7 @@ pub extern "C" fn optimize_with_mcts(
             // simulation_worker_num: n_threads - 1,
             simulation_worker_num: 1,
             lp_extract: false,
-            node_limit: 5000,
+            node_limit: 10_000,
             time_limit: 10,
         };
         let egraph = run_mcts(runner.egraph, root, rules, cost_fn.clone(), Some(args));

@@ -100,7 +100,7 @@ impl Node {
         }
     }
 
-    pub fn select_uct_action(&self, max: bool) -> usize {
+    pub fn select_uct_action(&self, max: bool) -> (usize, f32) {
         let mut best_score = std::f32::MIN;
         let mut best_action = std::usize::MAX;
         let mut sat_count = 0;
@@ -142,13 +142,20 @@ impl Node {
                 self.is_head, self.updated_node_count, sat_count, child_missing_count
             );
         }
+
+        // almost all actions are 0; then just select one action
+        if max && best_action == 0 && best_score < 1.0 {
+            let mut rng = rand::thread_rng();
+            best_action = rng.gen_range(0..self.action_n);
+        }
+
         if max {
             println!(
                 "best_action {} and expected score {}",
                 best_action, best_score
             );
         }
-        best_action
+        (best_action, best_score)
     }
 
     pub fn update_history(&mut self, idx: u32, action_taken: usize, reward: f32) {

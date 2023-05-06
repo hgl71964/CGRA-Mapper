@@ -194,11 +194,13 @@ where
         let mut iter = 0;
         let mut episode_reward = 0.0;
         let mut total_planning_time = 0;
+        let mut last_score = 10.0;
+        let mut this_score = 0.0;
 
         // env loop
         loop {
             let planning_time = Instant::now();
-            let action = self.plan(&state, &env);
+            let (action, this_score) = self.plan(&state, &env);
             let planning_time = planning_time.elapsed().as_secs();
             total_planning_time += planning_time;
 
@@ -213,9 +215,10 @@ where
             );
             println!("{}", info.report);
             println!("************************");
-            if done || info.best_cost < cost_threshold || iter >= iter_limit {
+            if done || info.best_cost < cost_threshold || iter >= iter_limit || (this_score + last_score < 2.0) {
                 break;
             }
+            last_score = this_score;
         }
         println!(
             "[RMCTS] Done:: base_cost {} -> cost {} with iter {} and time {}s",
@@ -227,11 +230,11 @@ where
     }
 
     // fn plan(&mut self, _state: &(), env: &Env<L, N>) -> usize {
-    fn plan(&mut self, _state: &(), env: &EgraphEnv<L, N, CF>) -> usize {
+    fn plan(&mut self, _state: &(), env: &EgraphEnv<L, N, CF>) -> (usize, f32) {
         // skip if action space is 1
         let action_n = env.get_action_space();
         if action_n == 1 {
-            return 0;
+            return (0, 10.0);
         }
 
         // clear
@@ -317,7 +320,7 @@ where
                 break;
             }
 
-            let action = curr_node.borrow().select_uct_action(false);
+            let (action, _) = curr_node.borrow().select_uct_action(false);
             let reward = curr_node.borrow().rewards[action].clone();
             curr_node
                 .borrow_mut()
